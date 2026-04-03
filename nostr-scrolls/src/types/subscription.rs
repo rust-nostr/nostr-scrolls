@@ -1,8 +1,6 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use sys_alloc::boxed::Box;
-
 use crate::{Event, IntoHandle};
 
 /// Nostr scrolls subscription
@@ -39,12 +37,11 @@ impl Subscription {
     /// handlers for the subscription, only last handler will be attached
     ///
     /// [`nostr-scrolls::drop`]: crate::drop
-    pub fn on_event<F>(&self, handler: F)
-    where
-        F: FnMut(Event, bool) -> bool + Send + 'static,
-    {
-        let mut handlers = crate::SUBSCRIPTIONS_ON_EVENT.lock();
-        handlers.insert(self.handle, (Box::new(handler), self.close_on_eose));
+    pub fn on_event(&self, handler: fn(Event, bool) -> bool) {
+        let mut handlers = crate::SUBSCRIPTIONS_ON_EVENT.write();
+        handlers
+            .push((self.handle, (handler, self.close_on_eose)))
+            .expect("The handlers is full");
     }
 
     /// Attach a callback invoked when the end-of-stored-events marker is
@@ -57,11 +54,10 @@ impl Subscription {
     /// handlers for the subscription, only last handler will be attached
     ///
     /// [`Filter::close_on_eose`]: crate::Filter::close_on_eose
-    pub fn on_eose<F>(&self, handler: F)
-    where
-        F: FnMut() -> bool + Send + 'static,
-    {
-        let mut handlers = crate::SUBSCRIPTIONS_ON_EOSE.lock();
-        handlers.insert(self.handle, Box::new(handler));
+    pub fn on_eose(&self, handler: fn() -> bool) {
+        let mut handlers = crate::SUBSCRIPTIONS_ON_EOSE.write();
+        handlers
+            .push((self.handle, handler))
+            .expect("The handlers is full");
     }
 }

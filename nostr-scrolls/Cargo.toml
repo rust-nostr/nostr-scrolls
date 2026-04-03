@@ -12,17 +12,9 @@ rust-version.workspace = true
 keywords.workspace = true
 
 [dependencies]
-hashbrown = { version = "0.16.1", default-features = false, features = [
-  "default-hasher",
-] }
-spin = { version = "0.10.0", default-features = false, features = [
-  "mutex",
-  "spin_mutex",
-  "lazy",
-] }
-wee_alloc = "0.4.5"
+spin = { version = "0.10.0", default-features = false, features = ["rwlock"] }
 nostr-scrolls-macros = { workspace = true }
+heapless = { version = "0.9.1", features = ["portable-atomic"] }
 
 [[example]]
 name = "simple"
-crate-type = ["cdylib"]

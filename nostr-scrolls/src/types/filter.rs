@@ -122,6 +122,7 @@ impl Filter {
     ///
     /// Errors if `relay` byte length exceeds [`i32::MAX`].
     #[inline(always)]
+    #[doc(alias = "add_relay")]
     pub fn send_to(&mut self, relay: &str) -> Result<()> {
         safe_wrapper::req_add_relay(self, relay)
     }

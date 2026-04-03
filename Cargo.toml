@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = ["nostr-scrolls", "nostr-scrolls-macros"]
+
+[workspace.package]
+version = "0.44.1"
+edition = "2024"
+authors = ["Rust Nostr Developers"]
+homepage = "https://github.com/rust-nostr/nostr-scrolls"
+repository = "https://github.com/rust-nostr/nostr-scrolls.git"
+license = "MIT"
+rust-version = "1.85.0"
+keywords = ["nostr", "scrolls", "wasm"]
+
+[workspace.dependencies]
+nostr-scrolls-macros = { path = "nostr-scrolls-macros" }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

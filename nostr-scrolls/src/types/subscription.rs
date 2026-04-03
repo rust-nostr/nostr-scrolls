@@ -1,0 +1,67 @@
+// Copyright (c) 2026 Rust Nostr Developers
+// Distributed under the MIT software license
+
+use sys_alloc::boxed::Box;
+
+use crate::{Event, IntoHandle};
+
+/// Nostr scrolls subscription
+pub struct Subscription {
+    /// The subscription handle
+    pub(crate) handle: i32,
+    pub(crate) close_on_eose: bool,
+}
+
+impl IntoHandle for Subscription {
+    fn handle(&self) -> i32 {
+        self.handle
+    }
+}
+
+impl Subscription {
+    /// Create a subscription from a handler
+    pub(crate) fn from_handle(handle: i32) -> Self {
+        Self {
+            handle,
+            close_on_eose: false,
+        }
+    }
+
+    /// Register a handler that is invoked for every event received on this
+    /// subscription.
+    ///
+    /// The boolean flag indicates EOSE status: `true` if the event arrived
+    /// after the End of Stored Events marker, `false` if before.
+    ///
+    /// Returning `true` from the handler terminates the subscription early.
+    ///
+    /// Note: Calling this function multiple time will not attach multiple
+    /// handlers for the subscription, only last handler will be attached
+    ///
+    /// [`nostr-scrolls::drop`]: crate::drop
+    pub fn on_event<F>(&self, handler: F)
+    where
+        F: FnMut(Event, bool) -> bool + Send + 'static,
+    {
+        let mut handlers = crate::SUBSCRIPTIONS_ON_EVENT.lock();
+        handlers.insert(self.handle, (Box::new(handler), self.close_on_eose));
+    }
+
+    /// Attach a callback invoked when the end-of-stored-events marker is
+    /// received.
+    ///
+    /// Return `true` to close the subscription. Ignored if the subscription
+    /// was already configured to close on EOSE via [`Filter::close_on_eose`].
+    ///
+    /// Note: Calling this function multiple time will not attach multiple
+    /// handlers for the subscription, only last handler will be attached
+    ///
+    /// [`Filter::close_on_eose`]: crate::Filter::close_on_eose
+    pub fn on_eose<F>(&self, handler: F)
+    where
+        F: FnMut() -> bool + Send + 'static,
+    {
+        let mut handlers = crate::SUBSCRIPTIONS_ON_EOSE.lock();
+        handlers.insert(self.handle, Box::new(handler));
+    }
+}

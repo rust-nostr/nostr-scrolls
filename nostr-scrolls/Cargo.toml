@@ -1,0 +1,28 @@
+[package]
+name = "nostr-scrolls"
+description = "NIP-C5 scrolls SDK"
+readme = "../README.md"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+rust-version.workspace = true
+keywords.workspace = true
+
+[dependencies]
+hashbrown = { version = "0.16.1", default-features = false, features = [
+  "default-hasher",
+] }
+spin = { version = "0.10.0", default-features = false, features = [
+  "mutex",
+  "spin_mutex",
+  "lazy",
+] }
+wee_alloc = "0.4.5"
+nostr-scrolls-macros = { workspace = true }
+
+[[example]]
+name = "simple"
+crate-type = ["cdylib"]

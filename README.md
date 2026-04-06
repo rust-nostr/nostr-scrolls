@@ -1,11 +1,38 @@
 # Nostr Scrolls
 
-WRITE ME
+Self-contained WebAssembly programs packaged as Nostr events ("scrolls"). The
+binaries execute in a sandboxed environment inside a "host" (i.e., a proper
+Nostr client). Scrolls interact with Nostr exclusively through a minimal set of
+APIs provided by the host.
+
+This SDK provides a safe, ergonomic wrapper around the host API, making scroll
+development straightforward. It includes the `nostr_scrolls::main` macro, which
+handles parameter deserialization from the host-supplied pointer and registers a
+panic handler that logs errors before termination.
 
 ## Getting started
 
 ```rust,no_run
-example here
+#![no_std]
+#![no_main]
+
+use nostr_scrolls::{PublicKey, Filter};
+
+#[allow(unused_must_use)]
+#[nostr_scrolls::main]
+fn run(me: PublicKey) {
+  let filter = Filter::new();
+  filter.author(&me);
+  filter.kind(1);
+  filter.close_on_eose();
+  filter.tag('t', "asknostr");
+
+  let sub = filter.subscribe();
+  sub.on_event(|event, _| {
+      nostr_scrolls::display(&event);
+      false // Do not close the sub
+  });
+}
 ```
 
 More examples can be found in the [examples directory](./examples).
@@ -16,13 +43,18 @@ All notable changes to this library are documented in the [CHANGELOG.md](CHANGEL
 
 ## State
 
-**This library is in an ALPHA state**, things that are implemented generally work but the API will change in breaking ways.
+**This library is in an ALPHA state**, things that are implemented generally
+work but the API will change in breaking ways.
 
 ## Donations
 
-`rust-nostr` is free and open-source. This means we do not earn any revenue by selling it. Instead, we rely on your financial support. If you actively use any of the `rust-nostr` libs/software/services, then please [donate](https://rust-nostr.org/donate).
+`rust-nostr` is free and open-source. This means we do not earn any
+revenue by selling it. Instead, we rely on your financial support. If you
+actively use any of the `rust-nostr` libs/software/services, then please
+[donate](https://rust-nostr.org/donate).
 
 ## License
 
-This project is distributed under the MIT software license - see the [LICENSE](../../LICENSE) file for details
+This project is distributed under the MIT software license - see the
+[LICENSE](LICENSE) file for details
 

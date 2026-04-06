@@ -35,7 +35,7 @@ pub(crate) unsafe fn read_u32(ptr: *const u8, offset: &mut usize) -> u32 {
     let ptr = ptr.add(*offset);
     *offset += 4;
 
-    u32::from_le_bytes([*ptr, *ptr.add(1), *ptr.add(2), *ptr.add(3)])
+    ptr.cast::<u32>().read_unaligned()
 }
 
 /// Reads a little-endian i32 and advances the offset.
@@ -46,5 +46,5 @@ pub(crate) unsafe fn read_i32(ptr: *const u8, offset: &mut usize) -> i32 {
     let ptr = ptr.add(*offset);
     *offset += 4;
 
-    i32::from_le_bytes([*ptr, *ptr.add(1), *ptr.add(2), *ptr.add(3)])
+    ptr.cast::<i32>().read_unaligned()
 }

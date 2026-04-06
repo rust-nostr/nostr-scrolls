@@ -67,7 +67,7 @@ pub(crate) fn read_slice<'a>(ptr: *const u8, len: usize) -> &'a [u8] {
 pub(crate) fn read_slice_string<'a>(ptr: *const u8) -> &'a str {
     unsafe {
         // Read the 4-byte length.
-        let length = u32::from_be(ptr.cast::<u32>().read_unaligned());
+        let length = u32::from_le(ptr.cast::<u32>().read_unaligned());
 
         let str_ptr = ptr.add(4);
         let bytes = core::slice::from_raw_parts(str_ptr, length as usize);

@@ -9,15 +9,56 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+use alloc::{string::ToString, vec::Vec};
 use core::option::Option;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use quote::{format_ident, quote};
-use syn::{FnArg, Ident, ItemFn, Pat, Type, Visibility, parse_macro_input, spanned::Spanned};
+use quote::quote;
+use syn::{
+    FnArg, Ident, ItemFn, Pat, Type, Visibility,
+    parse::{Parse, ParseStream},
+    parse_macro_input,
+    spanned::Spanned,
+    token::{Comma, Mut},
+};
+
+/// Controls code generation for the `#[main]` macro.
+struct MainAttrs {
+    /// Disables the default panic handler, allowing a custom implementation.
+    no_panic_handler: bool,
+}
+
+impl Parse for MainAttrs {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let mut no_panic_handler = false;
+
+        while !input.is_empty() {
+            let ident: Ident = input.parse()?;
+            match ident.to_string().as_str() {
+                "no_panic_handler" => no_panic_handler = true,
+                other => {
+                    return Err(syn::Error::new(
+                        ident.span(),
+                        alloc::format!("unknown option: `{other}`"),
+                    ));
+                }
+            }
+
+            if input.peek(Comma) {
+                input.parse::<Comma>()?;
+            }
+        }
+
+        Ok(MainAttrs { no_panic_handler })
+    }
+}
 
 /// Attribute macro that transforms a `run` function to read parameters from a
-/// WASM buffer.
+/// WASM memory.
+///
+/// Also initialize the panic handler to log panic messages
+/// via `nostr_scrolls::log`. To disable this behavior, use
+/// `#[nostr_scrolls::main(no_panic_handler)]`.
 ///
 /// # Requirements
 /// - The function must be named `run`
@@ -54,8 +95,14 @@ use syn::{FnArg, Ident, ItemFn, Pat, Type, Visibility, parse_macro_input, spanne
 ///
 /// [`&str`]: str
 #[proc_macro_attribute]
-pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn main(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);
+
+    // Parse attributes
+    let attrs = match syn::parse::<MainAttrs>(attr) {
+        Ok(a) => a,
+        Err(e) => return e.to_compile_error().into(),
+    };
 
     // Ensure function name is 'run'
     if input_fn.sig.ident != "run" {
@@ -83,14 +130,18 @@ pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     // Extract parameter names and types
-    let params: Vec<(Ident, Type)> = input_fn
+    let params: Vec<(Option<Mut>, Ident, Type)> = input_fn
         .sig
         .inputs
         .iter()
         .filter_map(|arg| {
             if let FnArg::Typed(pat_type) = arg {
                 if let Pat::Ident(pat_ident) = &*pat_type.pat {
-                    Some((pat_ident.ident.clone(), (*pat_type.ty).clone()))
+                    Some((
+                        pat_ident.mutability,
+                        pat_ident.ident.clone(),
+                        (*pat_type.ty).clone(),
+                    ))
                 } else {
                     None
                 }
@@ -100,55 +151,67 @@ pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
         })
         .collect();
 
-    // Get parameter names and types for code generation
-    let param_names: Vec<&Ident> = params.iter().map(|(name, _)| name).collect();
-
     // Generate read statements for each parameter
     let read_statements: Vec<TokenStream2> = params
         .iter()
-        .map(|(name, ty)| {
+        .map(|(mutability, name, ty)| {
             quote! {
-                let #name: #ty = <#ty as nostr_scrolls::ReadParam>::read_param(&mut cursor, &buffer);
+                let #mutability #name: #ty = <#ty as nostr_scrolls::ReadParam>::read_param(ptr, &mut offset);
             }
         })
         .collect();
+    let body = input_fn.block;
+    let fn_attrs = input_fn.attrs;
 
-    // Generate parameter list for function call
-    let call_params: Vec<TokenStream2> = param_names.iter().map(|name| quote! { #name }).collect();
+    // Check if the pointer is null
+    let check_pointer = if read_statements.is_empty() {
+        quote! {}
+    } else {
+        quote! {
+            if ptr.is_null() {
+                panic!("null pointer passed as a parameters pointer");
+            }
+        }
+    };
 
-    // Rename the user's function
-    let user_fn_ident = format_ident!("__nostr_scrolls_user_run");
-    let mut user_fn = input_fn.clone();
-    user_fn.sig.ident = user_fn_ident.clone();
+    // Conditionally generate the panic handler
+    let panic_handler = if attrs.no_panic_handler {
+        quote! {}
+    } else {
+        quote! {
+            #[panic_handler]
+            fn panic(info: &core::panic::PanicInfo) -> ! {
+                let msg = info.message().as_str().unwrap_or("panic occurred");
+
+                _ = nostr_scrolls::log("PANIC!");
+                _ = nostr_scrolls::log(msg);
+
+                if let Some(location) = info.location() {
+                    _ = nostr_scrolls::log(location.file());
+                }
+
+                core::arch::wasm32::unreachable()
+            }
+        }
+    };
 
     // Generate the final expanded code
     let expanded = quote! {
-        // The user's original function, renamed
-        #user_fn
+        #panic_handler
 
         // The actual entry point that the host calls
+        #(#fn_attrs )*
         #[unsafe(no_mangle)]
-        pub unsafe extern "C" fn run(ptr: *const u8, len: i32) {
-            let len = len as usize;
+        pub unsafe extern "C" fn run(ptr: *const u8) {
+            let mut offset = 0usize;
 
-            // Create slice from WASM linear memory
-            let buffer = unsafe { core::slice::from_raw_parts(ptr, len) };
-            let mut cursor = 0usize;
+            #check_pointer
 
-            // Read all parameters from the buffer
+            // Read all parameters
             #(#read_statements)*
 
-            // Verify all bytes were consumed
-            if cursor != buffer.len() {
-                panic!(
-                    "nostr_scrolls: Parameter buffer length mismatch - consumed {} bytes, but buffer has {} bytes",
-                    cursor,
-                    buffer.len()
-                );
-            }
-
-            // Call the user's function with the extracted parameters
-            #user_fn_ident(#(#call_params),*);
+            // User function body
+            #body
         }
     };
 

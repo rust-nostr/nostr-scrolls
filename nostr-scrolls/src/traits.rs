@@ -9,149 +9,77 @@ pub trait IntoHandle {
     fn handle(&self) -> i32;
 }
 
-/// Trait for reading parameters from the host-provided buffer. Each parameter
-/// type must implement this trait to be used in `run` function parameters.
-pub trait ReadParam<'a, 'b>: Sized {
-    /// Read a parameter from the buffer at the current cursor position.
-    /// Advances the cursor after reading.
+/// Trait for reading parameters from the memory. Each parameter type must
+/// implement this trait to be used in `run` function parameters.
+///
+/// Blanket implementation provided for `Option<T> where T: ReadParam`.
+pub trait ReadParam<'a>: Sized + 'a {
+    /// Reads a value from memory at `ptr + *offset` and advances the offset.
     ///
-    /// # Panics
-    /// Panics if there are not enough bytes in the buffer.
-    fn read_param(cursor: &'a mut usize, buffer: &'b [u8]) -> Self;
+    /// # Safety
+    ///
+    /// The caller must ensure that reading `Self` at the computed address is valid.
+    unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self;
 }
 
-// | Type         | Encoding                                                              | Size          |
-// | ------------ | --------------------------------------------------------------------- | ------------- |
-// | `public_key` | 32 bytes (should all be set to zero if the parameter is not provided) | 32 bytes      |
-// | `event`      | i32 handle                                                            | 4 bytes       |
-// | `string`     | u32_be length followed by UTF-8 bytes                                 | 4 + len bytes |
-// | `number`     | i32                                                                   | 4 bytes       |
-// | `timestamp`  | unix timestamp as u32_be                                              | 4 bytes       |
-// | `relay`      | relay URL, same as string                                             | 4 + len bytes |
+impl<'a, T> ReadParam<'a> for Option<T>
+where
+    T: ReadParam<'a>,
+{
+    unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
+        if !utils::peek_presence_flag(ptr, *offset) {
+            *offset += 1;
+            return None;
+        }
 
-impl<'a, 'b> ReadParam<'a, 'b> for &'b str {
-    fn read_param(cursor: &'a mut usize, buffer: &'b [u8]) -> Self {
-        if !utils::read_presence_flag(cursor, buffer) {
+        Some(T::read_param(ptr, offset))
+    }
+}
+
+// | Type         | Encoding                           | Size (if provided) |
+// | ------------ | -----------------------------------| ------------------ |
+// | `public_key` | 32 bytes                           | 32 bytes           |
+// | `event`      | i32 handle                         | 4 bytes            |
+// | `string`     | u32 length followed by UTF-8 bytes | 4 + len bytes      |
+// | `number`     | i32                                | 4 bytes            |
+// | `timestamp`  | Unix timestamp as u32              | 4 bytes            |
+// | `relay`      | Relay URL, same encoding as string | 4 + len bytes      |
+
+impl<'a> ReadParam<'a> for &'a str {
+    unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
+        if !utils::read_presence_flag(ptr, offset) {
             panic!("ReadParam(&str): Expected required parameter, but host provided 0x00");
         }
 
-        if buffer.len() < *cursor + 4 {
-            panic!(
-                "ReadParam(&str): Out of bounds reading length prefix at cursor {cursor} (buffer len: {})",
-                buffer.len()
-            );
-        }
-
-        let str_len = u32::from_be_bytes([
-            buffer[*cursor],
-            buffer[*cursor + 1],
-            buffer[*cursor + 2],
-            buffer[*cursor + 3],
-        ]) as usize;
-
-        *cursor += 4;
-
-        if buffer.len() < *cursor + str_len {
-            panic!(
-                "ReadParam(&str): Out of bounds reading string payload (expected {str_len} bytes, remaining {})",
-                buffer.len() - *cursor
-            );
-        }
-
-        let bytes = &buffer[*cursor..*cursor + str_len];
-        *cursor += str_len;
+        let str_len = utils::read_u32(ptr, offset) as usize;
+        let bytes = core::slice::from_raw_parts(ptr.add(*offset), str_len);
+        *offset += str_len;
 
         debug_assert!(
             core::str::from_utf8(bytes).is_ok(),
             "ReadParam(&str): Invalid UTF-8 encountered in memory"
         );
 
-        unsafe { core::str::from_utf8_unchecked(bytes) }
+        core::str::from_utf8_unchecked(bytes)
     }
 }
 
-impl<'a, 'b> ReadParam<'a, 'b> for Option<&'b str> {
-    fn read_param(cursor: &'a mut usize, buffer: &'b [u8]) -> Self {
-        // Check the presence flag: if absent, consume 1 byte and return None;
-        // otherwise delegate to the &str implementation to read the actual
-        // string
-        if !utils::peek_presence_flag(cursor, buffer) {
-            *cursor += 1;
-            return None;
-        }
-
-        Some(<&str as ReadParam>::read_param(cursor, buffer))
-    }
-}
-
-impl<'a, 'b> ReadParam<'a, 'b> for i32 {
-    fn read_param(cursor: &'a mut usize, buffer: &'b [u8]) -> Self {
-        if !utils::read_presence_flag(cursor, buffer) {
+impl<'a> ReadParam<'a> for i32 {
+    unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
+        if !utils::read_presence_flag(ptr, offset) {
             panic!("ReadParam(i32): Expected required parameter, but host provided 0x00");
         }
 
-        if buffer.len() < *cursor + 4 {
-            panic!("ReadParam(i32): Out of bounds reading i32 at cursor {cursor}",);
-        }
-
-        let val = i32::from_le_bytes([
-            buffer[*cursor],
-            buffer[*cursor + 1],
-            buffer[*cursor + 2],
-            buffer[*cursor + 3],
-        ]);
-
-        *cursor += 4;
-        val
+        utils::read_i32(ptr, offset)
     }
 }
 
-impl<'a, 'b> ReadParam<'a, 'b> for Option<i32> {
-    fn read_param(cursor: &'a mut usize, buffer: &'b [u8]) -> Self {
-        // Check the presence flag: if absent, consume 1 byte and return None;
-        // otherwise delegate to the i32 implementation to read the actual
-        // number
-        if !utils::peek_presence_flag(cursor, buffer) {
-            *cursor += 1;
-            return None;
-        }
-
-        Some(<i32 as ReadParam>::read_param(cursor, buffer))
-    }
-}
-
-impl<'a, 'b> ReadParam<'a, 'b> for u32 {
-    fn read_param(cursor: &'a mut usize, buffer: &'b [u8]) -> Self {
-        if !utils::read_presence_flag(cursor, buffer) {
+impl<'a> ReadParam<'a> for u32 {
+    unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
+        if !utils::read_presence_flag(ptr, offset) {
             panic!("ReadParam(u32): Expected required parameter, but host provided 0x00");
         }
 
-        if buffer.len() < *cursor + 4 {
-            panic!("ReadParam(u32): Out of bounds reading u32 at cursor {cursor}",);
-        }
-
-        let val = u32::from_be_bytes([
-            buffer[*cursor],
-            buffer[*cursor + 1],
-            buffer[*cursor + 2],
-            buffer[*cursor + 3],
-        ]);
-
-        *cursor += 4;
-        val
-    }
-}
-
-impl<'a, 'b> ReadParam<'a, 'b> for Option<u32> {
-    fn read_param(cursor: &'a mut usize, buffer: &'b [u8]) -> Self {
-        // Check the presence flag: if absent, consume 1 byte and return None;
-        // otherwise delegate to the u32 implementation to read the actual
-        // number
-        if !utils::peek_presence_flag(cursor, buffer) {
-            *cursor += 1;
-            return None;
-        }
-
-        Some(<u32 as ReadParam>::read_param(cursor, buffer))
+        utils::read_u32(ptr, offset)
     }
 }

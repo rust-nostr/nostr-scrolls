@@ -1,19 +1,14 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-/// Determines whether a value is present by inspecting the next byte in the
-/// buffer.
+/// Determines whether a value is present by inspecting the byte at the given
+/// offset.
 ///
-/// The presence byte must be `0` (absent) or `1` (present); any other value
-/// causes a panic. Panics if the buffer is exhausted before the byte can be
-/// read.
-#[inline]
-pub(crate) fn peek_presence_flag(cursor: &usize, buffer: &[u8]) -> bool {
-    if buffer.len() < *cursor + 1 {
-        panic!("Out of bounds reading presence flag");
-    }
-
-    let flag = buffer[*cursor];
+/// # Panics
+///
+/// Panics if the presence byte is neither `0x00` nor `0x01`.
+pub(crate) unsafe fn peek_presence_flag(ptr: *const u8, offset: usize) -> bool {
+    let flag = *ptr.add(offset);
 
     match flag {
         0 => false, // Not provided
@@ -22,15 +17,34 @@ pub(crate) fn peek_presence_flag(cursor: &usize, buffer: &[u8]) -> bool {
     }
 }
 
-/// Determines whether a value is present by inspecting the next byte in the
-/// buffer.
+/// Determines whether a value is present by inspecting the byte at the given
+/// offset.
 ///
-/// Advances the cursor by one byte. The presence byte must be `0` (absent)
-/// or `1` (present); any other value causes a panic. Panics if the buffer is
-/// exhausted before the byte can be read.
+/// Advances the offset by one byte. The presence byte must be `0x00` (absent)
+/// or `0x01` (present); any other value causes a panic.
+pub(crate) unsafe fn read_presence_flag(ptr: *const u8, offset: &mut usize) -> bool {
+    *offset += 1;
+    peek_presence_flag(ptr, *offset - 1)
+}
+
+/// Reads a little-endian u32 and advances the offset.
+///
+/// Safety: `ptr` must be valid for at least `*offset + 4` bytes.
 #[inline]
-pub(crate) fn read_presence_flag(cursor: &mut usize, buffer: &[u8]) -> bool {
-    let val = peek_presence_flag(cursor, buffer);
-    *cursor += 1;
-    val
+pub(crate) unsafe fn read_u32(ptr: *const u8, offset: &mut usize) -> u32 {
+    let ptr = ptr.add(*offset);
+    *offset += 4;
+
+    u32::from_le_bytes([*ptr, *ptr.add(1), *ptr.add(2), *ptr.add(3)])
+}
+
+/// Reads a little-endian i32 and advances the offset.
+///
+/// Safety: `ptr` must be valid for at least `*offset + 4` bytes.
+#[inline]
+pub(crate) unsafe fn read_i32(ptr: *const u8, offset: &mut usize) -> i32 {
+    let ptr = ptr.add(*offset);
+    *offset += 4;
+
+    i32::from_le_bytes([*ptr, *ptr.add(1), *ptr.add(2), *ptr.add(3)])
 }

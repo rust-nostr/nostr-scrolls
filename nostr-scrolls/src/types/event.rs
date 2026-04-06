@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::{EventId, IntoHandle, PublicKey, ReadParam, Result, host_ffi::safe_wrapper};
+use crate::{EventId, IntoHandle, PublicKey, ReadParam, Result, host_ffi::safe_wrapper, utils};
 
 /// Nostr scrolls event
 pub struct Event {
@@ -15,10 +15,14 @@ impl IntoHandle for Event {
     }
 }
 
-impl<'a, 'b> ReadParam<'a, 'b> for Event {
-    fn read_param(cursor: &'a mut usize, buffer: &'b [u8]) -> Self {
+impl<'a> ReadParam<'a> for Event {
+    unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
+        if !utils::read_presence_flag(ptr, offset) {
+            panic!("ReadParam(event): Expected required parameter, but host provided 0x00");
+        }
+
         Self {
-            handle: <i32 as ReadParam>::read_param(cursor, buffer),
+            handle: utils::read_i32(ptr, offset),
         }
     }
 }

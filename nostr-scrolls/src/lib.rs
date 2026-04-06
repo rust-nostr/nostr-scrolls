@@ -2,6 +2,7 @@
 // Distributed under the MIT software license
 
 #![no_std]
+#![allow(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
 #![warn(rustdoc::bare_urls)]
 #![warn(clippy::large_futures)]

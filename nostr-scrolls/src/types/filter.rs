@@ -1,7 +1,10 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::{Error, EventId, IntoHandle, PublicKey, Result, Subscription, host_ffi::safe_wrapper};
+use crate::{
+    Error, EventId, PublicKey, Result, Subscription,
+    host_ffi::{drop as ffi_drop, safe_wrapper},
+};
 
 /// Nostr scrolls filter
 #[derive(Debug)]
@@ -12,15 +15,15 @@ pub struct Filter {
     pub(crate) close_on_eose: bool,
 }
 
-impl IntoHandle for Filter {
-    fn handle(&self) -> i32 {
-        self.handle
-    }
-}
-
 impl Default for Filter {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Drop for Filter {
+    fn drop(&mut self) {
+        unsafe { ffi_drop(self.handle) }
     }
 }
 

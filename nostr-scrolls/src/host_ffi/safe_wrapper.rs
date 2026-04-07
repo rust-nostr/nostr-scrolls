@@ -5,7 +5,7 @@
 
 use core::str;
 
-use crate::{Event, EventId, Filter, IntoHandle, PublicKey, Result, Subscription, host_ffi::utils};
+use crate::{Event, EventId, Filter, PublicKey, Result, Subscription, host_ffi::utils};
 
 const BYTES_LEN: usize = 32;
 const HEX_LEN: usize = 64;
@@ -397,17 +397,5 @@ pub fn log(msg: &str) -> Result<()> {
     unsafe {
         super::log(msg.as_ptr(), msg.len() as i32);
         Ok(())
-    }
-}
-
-/// Releases any handle: unconsumed filter, event or active subscription
-/// (cancels it)
-#[inline(always)]
-pub fn drop<H>(x: H)
-where
-    H: IntoHandle,
-{
-    unsafe {
-        super::drop(x.handle());
     }
 }

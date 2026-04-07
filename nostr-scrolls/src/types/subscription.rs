@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::{Event, IntoHandle};
+use crate::{Event, host_ffi::drop as ffi_drop};
 
 /// Nostr scrolls subscription
 pub struct Subscription {
@@ -10,9 +10,9 @@ pub struct Subscription {
     pub(crate) close_on_eose: bool,
 }
 
-impl IntoHandle for Subscription {
-    fn handle(&self) -> i32 {
-        self.handle
+impl Drop for Subscription {
+    fn drop(&mut self) {
+        unsafe { ffi_drop(self.handle) }
     }
 }
 

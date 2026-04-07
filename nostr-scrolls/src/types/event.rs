@@ -2,7 +2,7 @@
 // Distributed under the MIT software license
 
 use crate::{
-    EventId, IntoHandle, PublicKey, ReadParam, Result,
+    EventId, PublicKey, ReadParam, Result,
     host_ffi::{drop as ffi_drop, safe_wrapper},
     utils,
 };
@@ -11,12 +11,6 @@ use crate::{
 pub struct Event {
     /// The event handle in the host
     pub(crate) handle: i32,
-}
-
-impl IntoHandle for Event {
-    fn handle(&self) -> i32 {
-        self.handle
-    }
 }
 
 impl<'a> ReadParam<'a> for Event {
@@ -33,9 +27,7 @@ impl<'a> ReadParam<'a> for Event {
 
 impl Drop for Event {
     fn drop(&mut self) {
-        unsafe {
-            ffi_drop(self.handle);
-        }
+        unsafe { ffi_drop(self.handle) }
     }
 }
 

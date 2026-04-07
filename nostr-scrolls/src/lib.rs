@@ -18,7 +18,7 @@ use heapless::Vec;
 use spin::RwLock;
 
 pub use self::errors::*;
-pub use self::host_ffi::safe_wrapper::{display, drop, log};
+pub use self::host_ffi::safe_wrapper::{display, log};
 pub use self::traits::*;
 pub use self::types::*;
 pub use nostr_scrolls_macros::main;
@@ -84,7 +84,7 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
 
             let mut eose_handlers = SUBSCRIPTIONS_ON_EOSE.write();
             let mut on_event_handlers = SUBSCRIPTIONS_ON_EVENT.write();
-            crate::drop(Subscription::from_handle(sub_handle));
+            drop(Subscription::from_handle(sub_handle));
             on_event_handlers.retain(|(handle, _)| handle != &sub_handle);
             eose_handlers.retain(|(handle, _)| handle != &sub_handle);
         }
@@ -140,7 +140,7 @@ pub unsafe extern "C" fn on_eose(sub_handle: i32) {
         // - The custom handler requested close, AND
         // - The host will NOT auto-close
         if close_sub && !is_close_on_eose {
-            crate::drop(Subscription::from_handle(sub_handle));
+            drop(Subscription::from_handle(sub_handle));
         }
     } else {
         // No custom EOSE handler exists for this subscription.

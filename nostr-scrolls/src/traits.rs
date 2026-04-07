@@ -3,12 +3,6 @@
 
 use crate::utils;
 
-/// A trait to get the underlying host runtime handle of a value
-pub trait IntoHandle {
-    /// The raw handle value used by the host runtime.
-    fn handle(&self) -> i32;
-}
-
 /// Trait for reading parameters from the memory. Each parameter type must
 /// implement this trait to be used in `run` function parameters.
 ///

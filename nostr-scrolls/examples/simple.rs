@@ -13,7 +13,6 @@
 #![no_std]
 #![no_main]
 
-use heapless::format;
 use nostr_scrolls::{Filter, PublicKey};
 
 #[allow(unused_must_use)]
@@ -38,7 +37,6 @@ fn run(me: PublicKey, mut limit: Option<i32>, relay: Option<&str>) {
 
     let sub = filter.subscribe();
     sub.on_event(|event, _| {
-        nostr_scrolls::log(&format!(100; "Found {}", event.id_hex()).unwrap()).unwrap();
         nostr_scrolls::display(&event);
         false
     });

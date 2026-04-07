@@ -29,10 +29,10 @@ impl Subscription {
     ///
     /// Note: Calling this function multiple time will not attach multiple
     /// handlers for the subscription, only last handler will be attached
-    ///
-    /// [`nostr-scrolls::drop`]: crate::drop
     pub fn on_event(&self, handler: fn(Event, bool) -> bool) {
         let mut handlers = crate::SUBSCRIPTIONS_ON_EVENT.write();
+
+        handlers.retain(|(handle, _)| handle != &self.handle);
         handlers
             .push((self.handle, (handler, self.close_on_eose)))
             .expect("The handlers is full");
@@ -50,6 +50,8 @@ impl Subscription {
     /// [`Filter::close_on_eose`]: crate::Filter::close_on_eose
     pub fn on_eose(&self, handler: fn() -> bool) {
         let mut handlers = crate::SUBSCRIPTIONS_ON_EOSE.write();
+
+        handlers.retain(|(handle, _)| handle != &self.handle);
         handlers
             .push((self.handle, handler))
             .expect("The handlers is full");

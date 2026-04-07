@@ -1,7 +1,11 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::{EventId, IntoHandle, PublicKey, ReadParam, Result, host_ffi::safe_wrapper, utils};
+use crate::{
+    EventId, IntoHandle, PublicKey, ReadParam, Result,
+    host_ffi::{drop as ffi_drop, safe_wrapper},
+    utils,
+};
 
 /// Nostr scrolls event
 pub struct Event {
@@ -29,9 +33,9 @@ impl<'a> ReadParam<'a> for Event {
 
 impl Drop for Event {
     fn drop(&mut self) {
-        crate::drop(Event {
-            handle: self.handle,
-        });
+        unsafe {
+            ffi_drop(self.handle);
+        }
     }
 }
 

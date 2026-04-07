@@ -130,7 +130,7 @@ unsafe extern "C" {
     /// string at `ptr/len` is the message.
     fn log(ptr: *const u8, len: i32);
 
-    /// Releases any handle: unconsumed request, active subscription (cancels
-    /// it), individual event, or list (also releases all contained event handles).
-    fn drop(handle: i32);
+    /// Releases any handle: unconsumed filter, event or active subscription
+    /// (cancels it)
+    pub(crate) fn drop(handle: i32);
 }

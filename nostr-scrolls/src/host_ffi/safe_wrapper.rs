@@ -400,8 +400,8 @@ pub fn log(msg: &str) -> Result<()> {
     }
 }
 
-/// Releases any handle: unconsumed request, active subscription (cancels
-/// it), individual event
+/// Releases any handle: unconsumed filter, event or active subscription
+/// (cancels it)
 #[inline(always)]
 pub fn drop<H>(x: H)
 where

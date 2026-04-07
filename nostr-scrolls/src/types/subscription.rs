@@ -10,12 +10,6 @@ pub struct Subscription {
     pub(crate) close_on_eose: bool,
 }
 
-impl Drop for Subscription {
-    fn drop(&mut self) {
-        unsafe { ffi_drop(self.handle) }
-    }
-}
-
 impl Subscription {
     /// Create a subscription from a handler
     pub(crate) fn from_handle(handle: i32) -> Self {
@@ -59,5 +53,15 @@ impl Subscription {
         handlers
             .push((self.handle, handler))
             .expect("The handlers is full");
+    }
+
+    /// Cancel the subscription. Terminating event delivery
+    pub fn cancel(self) {
+        let mut event_handlers = crate::SUBSCRIPTIONS_ON_EVENT.write();
+        let mut eose_handlers = crate::SUBSCRIPTIONS_ON_EOSE.write();
+
+        event_handlers.retain(|(handle, _)| handle != &self.handle);
+        eose_handlers.retain(|(handle, _)| handle != &self.handle);
+        unsafe { ffi_drop(self.handle) };
     }
 }

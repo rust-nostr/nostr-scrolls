@@ -81,12 +81,7 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
 
         if close_sub {
             core::mem::drop(on_event_handlers);
-
-            let mut eose_handlers = SUBSCRIPTIONS_ON_EOSE.write();
-            let mut on_event_handlers = SUBSCRIPTIONS_ON_EVENT.write();
-            drop(Subscription::from_handle(sub_handle));
-            on_event_handlers.retain(|(handle, _)| handle != &sub_handle);
-            eose_handlers.retain(|(handle, _)| handle != &sub_handle);
+            Subscription::from_handle(sub_handle).cancel();
         }
     }
 }
@@ -129,18 +124,7 @@ pub unsafe extern "C" fn on_eose(sub_handle: i32) {
             core::mem::drop(eose_handlers);
             core::mem::drop(event_handlers);
 
-            let mut eose_handlers = SUBSCRIPTIONS_ON_EOSE.write();
-            let mut event_handlers = SUBSCRIPTIONS_ON_EVENT.write();
-            event_handlers.retain(|(handle, _)| handle != &sub_handle);
-            eose_handlers.retain(|(handle, _)| handle != &sub_handle);
-        }
-
-        // The host automatically drops subscriptions that are configured to close on EOSE.
-        // To avoid double-close/double-drop, we only manually close here if:
-        // - The custom handler requested close, AND
-        // - The host will NOT auto-close
-        if close_sub && !is_close_on_eose {
-            drop(Subscription::from_handle(sub_handle));
+            Subscription::from_handle(sub_handle).cancel();
         }
     } else {
         // No custom EOSE handler exists for this subscription.

@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// Nostr scrolls filter
-#[derive(Debug)]
+#[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
 pub struct Filter {
     /// The filter handle in the host
     pub(crate) handle: i32,

@@ -13,7 +13,7 @@ pub(crate) unsafe fn peek_presence_flag(ptr: *const u8, offset: usize) -> bool {
     match flag {
         0 => false, // Not provided
         1 => true,  // Provided
-        _ => panic!("Invalid presence flag: expected 0x00 or 0x01, got {flag:#04x}"),
+        _ => panic!("Invalid presence flag: expected 0x00 or 0x01, got something else"),
     }
 }
 

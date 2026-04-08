@@ -16,5 +16,8 @@ spin = { version = "0.10.0", default-features = false, features = ["rwlock"] }
 nostr-scrolls-macros = { workspace = true }
 heapless = { version = "0.9.1", features = ["portable-atomic"] }
 
+[features]
+debug-strings = []
+
 [[example]]
 name = "simple"

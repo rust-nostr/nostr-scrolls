@@ -16,11 +16,13 @@ pub use subscription::Subscription;
 use crate::{ReadParam, utils};
 
 /// Nostr scrolls public key
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
 pub struct PublicKey(pub(crate) [u8; 32]);
 
 /// Nostr scrolls event id
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
 pub struct EventId(pub(crate) [u8; 32]);
 
 impl<'a> ReadParam<'a> for PublicKey {

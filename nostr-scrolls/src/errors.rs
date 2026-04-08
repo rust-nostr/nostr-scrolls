@@ -1,13 +1,11 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use core::fmt;
-
 /// Internal result type.
 pub(crate) type Result<T> = core::result::Result<T, Error>;
 
 /// nostr-scrolls errors
-#[derive(fmt::Debug)]
+#[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
 pub enum Error {
     /// Value exceeds the maximum size representable by [`i32::MAX`].
     SizeOverflow,
@@ -24,8 +22,9 @@ pub enum Error {
     InvalidTag,
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[cfg(feature = "debug-strings")]
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::SizeOverflow => {
                 write!(f, "size exceeds maximum allowed value of {}", i32::MAX)
@@ -38,4 +37,5 @@ impl fmt::Display for Error {
     }
 }
 
+#[cfg(feature = "debug-strings")]
 impl core::error::Error for Error {}

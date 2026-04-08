@@ -33,9 +33,19 @@ impl Subscription {
         let mut handlers = crate::SUBSCRIPTIONS_ON_EVENT.write();
 
         handlers.retain(|(handle, _)| handle != &self.handle);
-        handlers
+
+        if handlers
             .push((self.handle, (handler, self.close_on_eose)))
-            .expect("The handlers is full");
+            .is_err()
+        {
+            #[cfg(not(feature = "debug-strings"))]
+            panic!("Faild to register a new `on_event` handler");
+            #[cfg(feature = "debug-strings")]
+            panic!(
+                "Faild to register a new `on_event` handler for `{}` subscription",
+                self.handle
+            );
+        }
     }
 
     /// Attach a callback invoked when the end-of-stored-events marker is
@@ -52,9 +62,16 @@ impl Subscription {
         let mut handlers = crate::SUBSCRIPTIONS_ON_EOSE.write();
 
         handlers.retain(|(handle, _)| handle != &self.handle);
-        handlers
-            .push((self.handle, handler))
-            .expect("The handlers is full");
+
+        if handlers.push((self.handle, handler)).is_err() {
+            #[cfg(not(feature = "debug-strings"))]
+            panic!("Faild to register a new `on_event` handler");
+            #[cfg(feature = "debug-strings")]
+            panic!(
+                "Faild to register a new `on_event` handler for `{}` subscription",
+                self.handle
+            );
+        }
     }
 
     /// Cancel the subscription. Terminating event delivery

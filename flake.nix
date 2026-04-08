@@ -21,9 +21,10 @@
       with pkgs;
       {
         devShells.default = mkShell {
-          # packages = [
-          #   just
-          # ];
+          packages = [
+            wabt
+            # just
+          ];
 
           nativeBuildInputs = [
             (rust-bin.stable.latest.default.override {

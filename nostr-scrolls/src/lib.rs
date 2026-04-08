@@ -8,6 +8,9 @@
 #![warn(clippy::large_futures)]
 #![doc = include_str!("../../README.md")]
 
+#[cfg(not(target_arch = "wasm32"))]
+compile_error!("This crate support wasm32 only");
+
 mod errors;
 mod host_ffi;
 mod traits;

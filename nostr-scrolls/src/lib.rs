@@ -11,6 +11,10 @@
 #[cfg(not(target_arch = "wasm32"))]
 compile_error!("This crate support wasm32 only");
 
+#[cfg(target_feature = "atomics")]
+compile_error!("This crate does not support multi-threaded WebAssembly (wasm with atomics)");
+
+mod allocator;
 mod errors;
 mod host_ffi;
 mod traits;
@@ -36,24 +40,6 @@ pub(crate) static SUBSCRIPTIONS_ON_EVENT: RwLock<Vec<(i32, (fn(Event, bool) -> b
 #[allow(clippy::type_complexity)]
 pub(crate) static SUBSCRIPTIONS_ON_EOSE: RwLock<Vec<(i32, fn() -> bool), 128>> =
     RwLock::new(Vec::new());
-
-static mut BUMP_PTR: usize = 0;
-
-/// Allocates unmanaged memory for the host with no alignment requirements.
-#[unsafe(no_mangle)]
-#[doc(hidden)]
-pub unsafe extern "C" fn alloc(size: usize) -> *mut u8 {
-    unsafe {
-        if BUMP_PTR == 0 {
-            // start just past the stack (rough heuristic, or use a linker symbol)
-            BUMP_PTR = core::arch::wasm32::memory_size(0) * 65536;
-            core::arch::wasm32::memory_grow(0, 1);
-        }
-        let ptr = BUMP_PTR;
-        BUMP_PTR += size;
-        ptr as *mut u8
-    }
-}
 
 // If the WASM module ever calls `nostr.subscribe` it must also export a
 // function named `on_event` that will be called with every received event from

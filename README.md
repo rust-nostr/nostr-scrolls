@@ -50,6 +50,13 @@ sure your program doesn't exceed this limit, `core::fmt` is useless in our case,
 make sure your program doesn't load it. You can check the program `wat` in debug
 and search for `4core3fmt`. If it's there fix your program.
 
+## Global allocator
+
+This crate creates a global bump allocator, so your std code or `alloc`
+will use it. The bump allocator is simple, you can find it here:
+[allocator.rs](./nostr-scrolls/src/allocator.rs). This allocator just pushes the
+WASM linear memory; it doesn't free memory, so don't overuse it.
+
 ## Changelog
 
 All notable changes to this library are documented in the [CHANGELOG.md](CHANGELOG.md).

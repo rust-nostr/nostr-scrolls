@@ -179,6 +179,7 @@ pub fn main(attr: TokenStream, item: TokenStream) -> TokenStream {
         quote! {}
     } else {
         quote! {
+            #[cfg(not(test))]
             #[panic_handler]
             fn panic(info: &core::panic::PanicInfo) -> ! {
                 let msg = info.message().as_str().unwrap_or("panic occurred");

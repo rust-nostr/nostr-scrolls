@@ -37,6 +37,21 @@ fn run(me: PublicKey) {
 
 More examples can be found in the [examples directory](./examples).
 
+## Features
+
+### `debug-strings`
+
+This crate does not use `.unwrap()` or `.expect()` and by default the structs
+don't implement `Debug` nor `Display` traits. These functions and traits depend
+on `core::fmt`, and its instruction set is huge, it easily adds up `5~8KiB` to
+your wasm program. Anyway, the runtime will not see those debug information, so
+they are disabled by default, if you need them just enable the feature
+
+Relays check the nostr event size, they usually limit it to 16KiB, just make
+sure your program doesn't exceed this limit, `core::fmt` is useless in our case,
+make sure your program doesn't load it. You can check the program `wat` in debug
+and search for `4core3fmt`. If it's there fix your program.
+
 ## Changelog
 
 All notable changes to this library are documented in the [CHANGELOG.md](CHANGELOG.md).

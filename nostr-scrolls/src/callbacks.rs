@@ -50,7 +50,27 @@ impl EoseCallback {
     }
 }
 
-/// Creates an event or EOSE callback that keeps the subscription open.
+/// Creates a callback that keeps the subscription open
+///
+/// Accepts closures with 0, 1, or 2 parameters:
+/// - `||` — EOSE callback with no arguments
+/// - `|event|` — Event callback with the event only
+/// - `|event, eosed|` — Event callback with event and EOSE flag
+///
+/// ## Examples
+///
+/// ```rust,no_run
+/// use nostr_scrolls::{Filter, cb, cb_ret};
+///
+/// let mut filter = Filter::new();
+/// filter.kind(1);
+/// filter.limit(10);
+///
+/// let sub = filter.subscribe();
+/// sub.on_event(cb!(|event| /* ... */)); // A callback that only take an event
+/// sub.on_event(cb!(|event, eosed| /* ... */)); // A callback that take both
+/// sub.on_eose(cb!(|| /* ... */)); // A EOSE callback that return nothing
+/// ```
 #[macro_export]
 macro_rules! cb {
     (|| $body:expr) => {
@@ -64,8 +84,30 @@ macro_rules! cb {
     };
 }
 
-/// Creates an event or EOSE callback that may close the subscription based on
-/// return value.
+/// Creates a callback that may close the subscription based on its return value.
+///
+/// The closure must return `bool`: `true` to keep the subscription open, `false` to close it.
+/// Accepts closures with 0, 1, or 2 parameters:
+/// - `||` — EOSE callback with no arguments
+/// - `|event|` — Event callback with the event only
+/// - `|event, eosed|` — Event callback with event and EOSE flag
+///
+/// ## Examples
+///
+/// ```rust,no_run
+/// use nostr_scrolls::{Filter, cb, cb_ret};
+///
+/// let mut filter = Filter::new();
+/// filter.kind(1);
+/// filter.limit(10);
+///
+/// let sub = filter.subscribe();
+/// sub.on_event(cb_ret!(|event| /* bool */)); // A callback that only take an
+///                                            // event and return whenever to
+///                                            // close the sub or not
+/// sub.on_event(cb_ret!(|event, eosed| /* bool */)); // A callback that take both
+/// sub.on_eose(cb_ret!(|| /* bool */)); // A EOSE callback that return
+/// ```
 #[macro_export]
 macro_rules! cb_ret {
     (|| $body:expr) => {

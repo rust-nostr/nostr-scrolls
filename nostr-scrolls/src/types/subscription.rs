@@ -22,13 +22,13 @@ impl Subscription {
     /// Register a handler that is invoked for every event received on this
     /// subscription.
     ///
-    /// The boolean flag indicates EOSE status: `true` if the event arrived
-    /// after the End of Stored Events marker, `false` if before.
-    ///
-    /// Returning `true` from the handler terminates the subscription early.
+    /// You can use [`cb!`] or [`cb_ret!`] macros to make createing a callback easier
     ///
     /// Note: Calling this function multiple time will not attach multiple
     /// handlers for the subscription, only last handler will be attached
+    ///
+    /// [`cb!`]: crate::cb
+    /// [`cb_ret!`]: crate::cb_ret
     pub fn on_event(&self, handler: EventCallback) {
         utils::remove_on_event_subscription(self.handle);
 
@@ -50,13 +50,14 @@ impl Subscription {
     /// Attach a callback invoked when the end-of-stored-events marker is
     /// received.
     ///
-    /// Return `true` to close the subscription. Ignored if the subscription
-    /// was already configured to close on EOSE via [`Filter::close_on_eose`].
+    /// You can use [`cb!`] or [`cb_ret!`] macros to make createing a callback easier
     ///
     /// Note: Calling this function multiple time will not attach multiple
     /// handlers for the subscription, only last handler will be attached
     ///
     /// [`Filter::close_on_eose`]: crate::Filter::close_on_eose
+    /// [`cb!`]: crate::cb
+    /// [`cb_ret!`]: crate::cb_ret
     pub fn on_eose(&self, handler: EoseCallback) {
         utils::remove_on_eose_subscription(self.handle);
 

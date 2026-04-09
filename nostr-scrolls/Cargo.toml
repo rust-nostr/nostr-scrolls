@@ -1,6 +1,6 @@
 [package]
 name = "nostr-scrolls"
-description = "NIP-C5 scrolls SDK"
+description = "NIP-5C scrolls SDK"
 readme = "../README.md"
 version.workspace = true
 edition.workspace = true

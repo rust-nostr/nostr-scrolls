@@ -59,7 +59,7 @@ WASM linear memory; it doesn't free memory, so don't overuse it.
 
 ## Changelog
 
-All notable changes to this library are documented in the [CHANGELOG.md](CHANGELOG.md).
+All notable changes to this library are documented in the [CHANGELOG.md](./CHANGELOG.md).
 
 ## State
 
@@ -76,5 +76,5 @@ actively use any of the `rust-nostr` libs/software/services, then please
 ## License
 
 This project is distributed under the MIT software license - see the
-[LICENSE](LICENSE) file for details
+[LICENSE](./LICENSE) file for details
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::{Event, host_ffi::drop as ffi_drop};
+use crate::{Event, host_ffi::drop as ffi_drop, utils};
 
 /// Nostr scrolls subscription
 pub struct Subscription {
@@ -32,7 +32,7 @@ impl Subscription {
     pub fn on_event(&self, handler: fn(Event, bool) -> bool) {
         let mut handlers = crate::SUBSCRIPTIONS_ON_EVENT.write();
 
-        handlers.retain(|(handle, _)| handle != &self.handle);
+        utils::remove_on_event_subscription(self.handle);
 
         if handlers
             .push((self.handle, (handler, self.close_on_eose)))
@@ -61,7 +61,7 @@ impl Subscription {
     pub fn on_eose(&self, handler: fn() -> bool) {
         let mut handlers = crate::SUBSCRIPTIONS_ON_EOSE.write();
 
-        handlers.retain(|(handle, _)| handle != &self.handle);
+        utils::remove_on_eose_subscription(self.handle);
 
         if handlers.push((self.handle, handler)).is_err() {
             #[cfg(not(feature = "debug-strings"))]
@@ -75,12 +75,9 @@ impl Subscription {
     }
 
     /// Cancel the subscription. Terminating event delivery
+    #[inline(never)]
     pub fn cancel(self) {
-        let mut event_handlers = crate::SUBSCRIPTIONS_ON_EVENT.write();
-        let mut eose_handlers = crate::SUBSCRIPTIONS_ON_EOSE.write();
-
-        event_handlers.retain(|(handle, _)| handle != &self.handle);
-        eose_handlers.retain(|(handle, _)| handle != &self.handle);
+        utils::remove_subscription(self.handle);
         unsafe { ffi_drop(self.handle) };
     }
 }

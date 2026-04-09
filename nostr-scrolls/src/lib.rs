@@ -55,12 +55,7 @@ pub(crate) static SUBSCRIPTIONS_ON_EOSE: RwLock<Vec<(i32, fn() -> bool), 128>> =
 #[unsafe(no_mangle)]
 #[doc(hidden)]
 pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32) {
-    let on_event_handlers = SUBSCRIPTIONS_ON_EVENT.read();
-
-    if let Some((_, (callback, _))) = on_event_handlers
-        .iter()
-        .find(|(handle, _)| handle == &sub_handle)
-    {
+    if let Some(callback) = utils::find_on_event_callback(sub_handle) {
         let close_sub = (callback)(
             Event {
                 handle: event_handle,
@@ -69,8 +64,8 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
         );
 
         if close_sub {
-            core::mem::drop(on_event_handlers);
-            Subscription::from_handle(sub_handle).cancel();
+            utils::remove_on_event_subscription(sub_handle);
+            host_ffi::drop(sub_handle);
         }
     }
 }
@@ -86,47 +81,28 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
 #[unsafe(no_mangle)]
 #[doc(hidden)]
 pub unsafe extern "C" fn on_eose(sub_handle: i32) {
-    let eose_handlers = SUBSCRIPTIONS_ON_EOSE.read();
-    let event_handlers = SUBSCRIPTIONS_ON_EVENT.read();
-
     // Try to find a custom EOSE handler for this subscription
-    if let Some((_, callback)) = eose_handlers
-        .iter()
-        .find(|(handle, _)| handle == &sub_handle)
-    {
+    if let Some(callback) = utils::find_on_eose_callback(sub_handle) {
         // Execute the user's custom EOSE callback; true indicates subscription
         // should close
         let close_sub = (callback)();
 
         // Check if this subscription is configured to auto-close on EOSE
-        let is_close_on_eose = matches!(
-            event_handlers
-                .iter()
-                .find(|(handle, _)| handle == &sub_handle),
-            Some((_, (_, true)))
-        );
+        let is_close_on_eose = utils::is_close_on_eose(sub_handle);
 
         // Remove subscription from both handler maps if either:
         // - The custom EOSE handler returned true (wants to close), OR
         // - The subscription is configured to auto-close on EOSE
         if close_sub || is_close_on_eose {
-            core::mem::drop(eose_handlers);
-            core::mem::drop(event_handlers);
-
             Subscription::from_handle(sub_handle).cancel();
         }
     } else {
         // No custom EOSE handler exists for this subscription.
         // Check if it's in the event handlers and configured to auto-close on EOSE.
         // If so, remove it from event handlers to prevent further event processing.
-        if let Some((_, (_, true))) = event_handlers
-            .iter()
-            .find(|(handle, _)| handle == &sub_handle)
-        {
-            core::mem::drop(event_handlers);
-
-            let mut event_handlers = SUBSCRIPTIONS_ON_EVENT.write();
-            event_handlers.retain(|(handle, _)| handle != &sub_handle);
+        if utils::is_close_on_eose(sub_handle) {
+            utils::remove_on_event_subscription(sub_handle);
+            host_ffi::drop(sub_handle);
         }
     }
 }

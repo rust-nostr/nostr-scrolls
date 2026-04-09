@@ -13,7 +13,9 @@
 #![no_std]
 #![no_main]
 
-use nostr_scrolls::{Filter, PublicKey};
+extern crate alloc;
+
+use nostr_scrolls::{Filter, PublicKey, cb};
 
 #[allow(unused_must_use)]
 #[nostr_scrolls::main]
@@ -36,8 +38,5 @@ fn run(me: PublicKey, mut limit: Option<i32>, relay: Option<&str>) {
     }
 
     let sub = filter.subscribe();
-    sub.on_event(|event, _| {
-        nostr_scrolls::display(&event);
-        false
-    });
+    sub.on_event(cb!(|event| nostr_scrolls::display(&event)));
 }

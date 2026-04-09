@@ -15,31 +15,52 @@ compile_error!("This crate support wasm32 only");
 compile_error!("This crate does not support multi-threaded WebAssembly (wasm with atomics)");
 
 mod allocator;
+mod callbacks;
 mod errors;
 mod host_ffi;
+mod simple_cell;
 mod traits;
 mod types;
 mod utils;
 
-use heapless::Vec;
-use spin::RwLock;
+extern crate alloc;
 
+use core::ops::Deref;
+
+use heapless::Vec;
+
+pub use self::callbacks::*;
 pub use self::errors::*;
 pub use self::host_ffi::safe_wrapper::{display, log};
 pub use self::traits::*;
 pub use self::types::*;
 pub use nostr_scrolls_macros::main;
 
+struct UnsafeSync<T>(pub T);
+
+impl<T> Deref for UnsafeSync<T> {
+    type Target = T;
+
+    #[inline(always)]
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+// We manually implement Sync because we know WASM is single-threaded.
+unsafe impl<T> Sync for UnsafeSync<T> {}
+
+type EventStore = UnsafeSync<simple_cell::SimpleCell<Vec<(i32, (bool, EventCallback)), 128>>>;
+type EoseStore = UnsafeSync<simple_cell::SimpleCell<Vec<(i32, EoseCallback), 128>>>;
+
 /// Maps subscription handles to their event handlers and whether to close on
 /// EOSE.
-#[allow(clippy::type_complexity)]
-pub(crate) static SUBSCRIPTIONS_ON_EVENT: RwLock<Vec<(i32, (fn(Event, bool) -> bool, bool)), 128>> =
-    RwLock::new(Vec::new());
+pub(crate) static SUBSCRIPTIONS_ON_EVENT: EventStore =
+    UnsafeSync(simple_cell::SimpleCell::new(Vec::new()));
 
 /// Maps subscription handles to their EOSE handlers
-#[allow(clippy::type_complexity)]
-pub(crate) static SUBSCRIPTIONS_ON_EOSE: RwLock<Vec<(i32, fn() -> bool), 128>> =
-    RwLock::new(Vec::new());
+pub(crate) static SUBSCRIPTIONS_ON_EOSE: EoseStore =
+    UnsafeSync(simple_cell::SimpleCell::new(Vec::new()));
 
 // If the WASM module ever calls `nostr.subscribe` it must also export a
 // function named `on_event` that will be called with every received event from
@@ -55,18 +76,25 @@ pub(crate) static SUBSCRIPTIONS_ON_EOSE: RwLock<Vec<(i32, fn() -> bool), 128>> =
 #[unsafe(no_mangle)]
 #[doc(hidden)]
 pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32) {
-    if let Some(callback) = utils::find_on_event_callback(sub_handle) {
-        let close_sub = (callback)(
+    let Some(position) = utils::on_event_position(sub_handle) else {
+        return;
+    };
+
+    let close_sub = SUBSCRIPTIONS_ON_EVENT
+        .borrow()
+        .get_unchecked_mut(position)
+        .1
+        .1
+        .call(
             Event {
                 handle: event_handle,
             },
             eosed != 0,
         );
 
-        if close_sub {
-            utils::remove_on_event_subscription(sub_handle);
-            host_ffi::drop(sub_handle);
-        }
+    if close_sub {
+        utils::remove_on_event_subscription(sub_handle);
+        host_ffi::drop(sub_handle);
     }
 }
 
@@ -82,10 +110,14 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
 #[doc(hidden)]
 pub unsafe extern "C" fn on_eose(sub_handle: i32) {
     // Try to find a custom EOSE handler for this subscription
-    if let Some(callback) = utils::find_on_eose_callback(sub_handle) {
+    if let Some(position) = utils::on_eose_position(sub_handle) {
         // Execute the user's custom EOSE callback; true indicates subscription
         // should close
-        let close_sub = (callback)();
+        let close_sub = SUBSCRIPTIONS_ON_EOSE
+            .borrow()
+            .get_unchecked_mut(position)
+            .1
+            .call();
 
         // Check if this subscription is configured to auto-close on EOSE
         let is_close_on_eose = utils::is_close_on_eose(sub_handle);

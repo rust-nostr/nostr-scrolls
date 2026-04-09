@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::{Event, host_ffi::drop as ffi_drop, utils};
+use crate::{EoseCallback, EventCallback, host_ffi::drop as ffi_drop, utils};
 
 /// Nostr scrolls subscription
 pub struct Subscription {
@@ -29,20 +29,19 @@ impl Subscription {
     ///
     /// Note: Calling this function multiple time will not attach multiple
     /// handlers for the subscription, only last handler will be attached
-    pub fn on_event(&self, handler: fn(Event, bool) -> bool) {
-        let mut handlers = crate::SUBSCRIPTIONS_ON_EVENT.write();
-
+    pub fn on_event(&self, handler: EventCallback) {
         utils::remove_on_event_subscription(self.handle);
 
-        if handlers
-            .push((self.handle, (handler, self.close_on_eose)))
+        if crate::SUBSCRIPTIONS_ON_EVENT
+            .borrow()
+            .push((self.handle, (self.close_on_eose, handler)))
             .is_err()
         {
             #[cfg(not(feature = "debug-strings"))]
-            panic!("Faild to register a new `on_event` handler");
+            panic!("Faild to register a new `on_event` handler. The handlers is full");
             #[cfg(feature = "debug-strings")]
             panic!(
-                "Faild to register a new `on_event` handler for `{}` subscription",
+                "Faild to register a new `on_event` handler for `{}` subscription. The handlers is full",
                 self.handle
             );
         }
@@ -58,17 +57,19 @@ impl Subscription {
     /// handlers for the subscription, only last handler will be attached
     ///
     /// [`Filter::close_on_eose`]: crate::Filter::close_on_eose
-    pub fn on_eose(&self, handler: fn() -> bool) {
-        let mut handlers = crate::SUBSCRIPTIONS_ON_EOSE.write();
-
+    pub fn on_eose(&self, handler: EoseCallback) {
         utils::remove_on_eose_subscription(self.handle);
 
-        if handlers.push((self.handle, handler)).is_err() {
+        if crate::SUBSCRIPTIONS_ON_EOSE
+            .borrow()
+            .push((self.handle, handler))
+            .is_err()
+        {
             #[cfg(not(feature = "debug-strings"))]
-            panic!("Faild to register a new `on_event` handler");
+            panic!("Faild to register a new `on_eose` handler. The handlers is full");
             #[cfg(feature = "debug-strings")]
             panic!(
-                "Faild to register a new `on_event` handler for `{}` subscription",
+                "Faild to register a new `on_eose` handler for `{}` subscription. The handlers is full",
                 self.handle
             );
         }

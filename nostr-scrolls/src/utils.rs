@@ -1,8 +1,6 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::Event;
-
 /// Determines whether a value is present by inspecting the byte at the given
 /// offset.
 ///
@@ -51,37 +49,67 @@ pub(crate) unsafe fn read_i32(ptr: *const u8, offset: &mut usize) -> i32 {
     ptr.cast::<i32>().read_unaligned()
 }
 
-/// Unregister an event handler without affecting EOSE subscriptions.
+/// Locates a subscription handle in the global `on_event` handler list.
 #[inline(never)]
-pub(crate) fn remove_on_event_subscription(handle: i32) {
-    let mut event_handlers = crate::SUBSCRIPTIONS_ON_EVENT.write();
+pub(crate) fn on_event_position(handle: i32) -> Option<usize> {
+    let event_handlers = crate::SUBSCRIPTIONS_ON_EVENT.borrow();
     let length = event_handlers.len();
     let mut i = 0;
 
     while i < length {
         let entry = unsafe { event_handlers.get_unchecked(i) };
         if entry.0 == handle {
-            unsafe { event_handlers.swap_remove_unchecked(i) };
-        } else {
-            i += 1;
+            return Some(i);
         }
+        i += 1;
     }
+
+    None
 }
 
-/// Unregister an event handler without affecting on_event subscriptions.
+/// Locates a subscription handle in the global `EOSE` handler list.
 #[inline(never)]
-pub(crate) fn remove_on_eose_subscription(handle: i32) {
-    let mut eose_handlers = crate::SUBSCRIPTIONS_ON_EOSE.write();
+pub(crate) fn on_eose_position(handle: i32) -> Option<usize> {
+    let eose_handlers = crate::SUBSCRIPTIONS_ON_EOSE.borrow();
     let length = eose_handlers.len();
     let mut i = 0;
 
     while i < length {
         let entry = unsafe { eose_handlers.get_unchecked(i) };
         if entry.0 == handle {
-            unsafe { eose_handlers.swap_remove_unchecked(i) };
-        } else {
-            i += 1;
+            return Some(i);
         }
+        i += 1;
+    }
+
+    None
+}
+
+/// Unregister an event handler without affecting EOSE subscriptions.
+#[inline(never)]
+pub(crate) fn remove_on_event_subscription(handle: i32) {
+    let Some(position) = on_event_position(handle) else {
+        return;
+    };
+
+    unsafe {
+        crate::SUBSCRIPTIONS_ON_EVENT
+            .borrow()
+            .swap_remove_unchecked(position);
+    }
+}
+
+/// Unregister an event handler without affecting on_event subscriptions.
+#[inline(never)]
+pub(crate) fn remove_on_eose_subscription(handle: i32) {
+    let Some(position) = on_eose_position(handle) else {
+        return;
+    };
+
+    unsafe {
+        crate::SUBSCRIPTIONS_ON_EOSE
+            .borrow()
+            .swap_remove_unchecked(position);
     }
 }
 
@@ -92,56 +120,19 @@ pub(crate) fn remove_subscription(handle: i32) {
     remove_on_eose_subscription(handle);
 }
 
-/// Look up the event callback for an active subscription.
-#[inline(never)]
-pub(crate) fn find_on_event_callback(handle: i32) -> Option<fn(Event, bool) -> bool> {
-    let event_handlers = crate::SUBSCRIPTIONS_ON_EVENT.read();
-    let length = event_handlers.len();
-    let mut i = 0;
-
-    while i < length {
-        let entry = unsafe { event_handlers.get_unchecked(i) };
-        if entry.0 == handle {
-            return Some(entry.1.0);
-        }
-        i += 1;
-    }
-
-    None
-}
-
-/// Look up the EOSE callback for an active subscription.
-#[inline(never)]
-pub(crate) fn find_on_eose_callback(handle: i32) -> Option<fn() -> bool> {
-    let eose_handlers = crate::SUBSCRIPTIONS_ON_EOSE.read();
-    let length = eose_handlers.len();
-    let mut i = 0;
-
-    while i < length {
-        let entry = unsafe { eose_handlers.get_unchecked(i) };
-        if entry.0 == handle {
-            return Some(entry.1);
-        }
-        i += 1;
-    }
-
-    None
-}
-
 /// Check whether a subscription is configured to auto-close on EOSE.
 /// Returns false if the handle does not exist.
 #[inline(never)]
 pub(crate) fn is_close_on_eose(handle: i32) -> bool {
-    let event_handlers = crate::SUBSCRIPTIONS_ON_EVENT.read();
-    let length = event_handlers.len();
-    let mut i = 0;
+    let Some(position) = on_event_position(handle) else {
+        return false;
+    };
 
-    while i < length {
-        let entry = unsafe { event_handlers.get_unchecked(i) };
-        if entry.0 == handle {
-            return entry.1.1;
-        }
-        i += 1;
+    unsafe {
+        crate::SUBSCRIPTIONS_ON_EVENT
+            .borrow()
+            .get_unchecked(position)
+            .1
+            .0
     }
-    false
 }

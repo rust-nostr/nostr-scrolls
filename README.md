@@ -14,9 +14,10 @@ panic handler that logs errors before termination.
 
 ```rust,no_run
 #![no_std]
-#![no_main]
 
-use nostr_scrolls::{PublicKey, Filter};
+extern crate alloc;
+
+use nostr_scrolls::{PublicKey, Filter, cb};
 
 #[allow(unused_must_use)]
 #[nostr_scrolls::main]
@@ -28,10 +29,7 @@ fn run(me: PublicKey) {
   filter.tag('t', "asknostr");
 
   let sub = filter.subscribe();
-  sub.on_event(|event, _| {
-      nostr_scrolls::display(&event);
-      false // Do not close the sub
-  });
+  sub.on_event(cb!(|event| nostr_scrolls::display(&event)));
 }
 ```
 

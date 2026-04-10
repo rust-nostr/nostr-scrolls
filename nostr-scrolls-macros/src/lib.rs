@@ -78,14 +78,14 @@ impl Parse for MainAttrs {
 /// the `nostr_scrolls::ReadParam` trait. Wrap your Rust type in `Option` if
 /// it's optional
 ///
-/// | NIP-5C Type  | Rust Type                         | Note                              |
-/// |--------------|-----------------------------------|-----------------------------------|
-/// | `public_key` | `nostr_scrolls::PublicKey`        |                                   |
-/// | `event`      | `nostr_scrolls::Event`            |                                   |
-/// | `string`     | [`&str`]                          |                                   |
-/// | `number`     | [`i32`]                           |                                   |
-/// | `timestamp`  | [`u32`]                           |                                   |
-/// | `relay`      | [`&str`]                          | Validated by the host             |
+/// | NIP-5C Type  | Rust Type                  | Note                  |
+/// |--------------|----------------------------|-----------------------|
+/// | `public_key` | `nostr_scrolls::PublicKey` |                       |
+/// | `event`      | `nostr_scrolls::Event`     |                       |
+/// | `string`     | [`&str`]                   |                       |
+/// | `number`     | [`i32`] and [`isize`]      |                       |
+/// | `timestamp`  | [`u32`] and [`usize`]      |                       |
+/// | `relay`      | [`&str`]                   | Validated by the host |
 ///
 /// # Example
 /// ```rust

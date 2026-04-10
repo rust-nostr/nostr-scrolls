@@ -68,6 +68,13 @@ impl<'a> ReadParam<'a> for i32 {
     }
 }
 
+impl<'a> ReadParam<'a> for isize {
+    unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
+        // We are in wasm32, `isize` is `i32`
+        <i32 as ReadParam>::read_param(ptr, offset) as isize
+    }
+}
+
 impl<'a> ReadParam<'a> for u32 {
     unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
         if !utils::read_presence_flag(ptr, offset) {
@@ -75,5 +82,12 @@ impl<'a> ReadParam<'a> for u32 {
         }
 
         utils::read_u32(ptr, offset)
+    }
+}
+
+impl<'a> ReadParam<'a> for usize {
+    unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
+        // We are in wasm32, `usize` is `u32`
+        <u32 as ReadParam>::read_param(ptr, offset) as usize
     }
 }

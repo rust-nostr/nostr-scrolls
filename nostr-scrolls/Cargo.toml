@@ -20,3 +20,6 @@ debug-strings = []
 
 [[example]]
 name = "simple"
+
+[[example]]
+name = "resonate"

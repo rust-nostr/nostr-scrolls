@@ -36,7 +36,8 @@ pub use self::traits::*;
 pub use self::types::*;
 pub use nostr_scrolls_macros::main;
 
-struct UnsafeSync<T>(pub T);
+/// Allows `Sync` for single-threaded WASM targets where sharing is safe by design.
+pub struct UnsafeSync<T>(pub T);
 
 impl<T> Deref for UnsafeSync<T> {
     type Target = T;

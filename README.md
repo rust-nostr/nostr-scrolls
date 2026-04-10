@@ -13,6 +13,7 @@ panic handler that logs errors before termination.
 ## Getting started
 
 ```rust,no_run
+#![no_main]
 #![no_std]
 
 extern crate alloc;
@@ -22,7 +23,7 @@ use nostr_scrolls::{PublicKey, Filter, cb};
 #[allow(unused_must_use)]
 #[nostr_scrolls::main]
 fn run(me: PublicKey) {
-  let filter = Filter::new();
+  let mut filter = Filter::new();
   filter.author(&me);
   filter.kind(1);
   filter.close_on_eose();

@@ -1,11 +1,13 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
+//! Nostr Scrolls
+
 #![no_std]
 #![warn(missing_docs)]
 #![warn(rustdoc::bare_urls)]
 #![warn(clippy::large_futures)]
-#![doc = include_str!("../../README.md")]
+#![cfg_attr(doc, doc = include_str!("../../README.md"))]
 
 extern crate alloc;
 

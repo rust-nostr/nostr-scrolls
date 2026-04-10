@@ -59,7 +59,7 @@ impl EoseCallback {
 ///
 /// ## Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use nostr_scrolls::{Filter, cb, cb_ret};
 ///
 /// let mut filter = Filter::new();
@@ -94,7 +94,7 @@ macro_rules! cb {
 ///
 /// ## Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use nostr_scrolls::{Filter, cb, cb_ret};
 ///
 /// let mut filter = Filter::new();

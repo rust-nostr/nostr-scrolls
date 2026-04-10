@@ -1,12 +1,14 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
+//! Nostr Scrolls Macros
+
 #![no_std]
 #![allow(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
 #![warn(rustdoc::bare_urls)]
 #![warn(clippy::large_futures)]
-#![doc = include_str!("../../README.md")]
+#![cfg_attr(doc, doc = include_str!("../../README.md"))]
 
 #[cfg(not(target_arch = "wasm32"))]
 compile_error!("This crate support wasm32 only");

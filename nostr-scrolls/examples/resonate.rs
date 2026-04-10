@@ -40,7 +40,7 @@ static RELATED_FILTER: UnsafeSync<UnsafeCell<Option<Filter>>> = UnsafeSync(Unsaf
 /// Build a filter capturing reposts and reactions near a target timestamp.
 fn related_filter(target_ts: usize, time_window: Option<i32>, limit: Option<i32>) -> Filter {
     let time_window = time_window
-        .map(|days| days * 24 * 60 * 60)
+        .and_then(|days| days.checked_mul(24 * 60 * 60))
         .unwrap_or(SEVEN_DAYS) as usize;
 
     let mut filter = Filter::new();
@@ -72,17 +72,17 @@ fn run(event: Event, time_window: Option<i32>, limit: Option<i32>) {
     unsafe { *RELATED_FILTER.get() = Some(related_filter(event.created_at(), time_window, limit)) };
 
     // Find likes and reposts for this event
-    let mut related_filter = Filter::new();
-    related_filter.kind(REPOST_KIND);
-    related_filter.kind(REACTION_KIND);
-    related_filter.tag('e', event.id_hex());
-    related_filter.tag('p', event.pubkey_hex());
-    related_filter.close_on_eose();
+    let mut like_re_req = Filter::new();
+    like_re_req.kind(REPOST_KIND);
+    like_re_req.kind(REACTION_KIND);
+    like_re_req.tag('e', event.id_hex());
+    like_re_req.tag('p', event.pubkey_hex());
+    like_re_req.close_on_eose();
 
-    let related_sub = related_filter.subscribe();
+    let like_re_sub = like_re_req.subscribe();
 
     // Add authors of likes/reposts to filter
-    related_sub.on_event(cb!(|event| unsafe {
+    like_re_sub.on_event(cb!(|event| unsafe {
         (*RELATED_FILTER.get())
             .as_mut()
             .unwrap_unchecked()
@@ -90,7 +90,7 @@ fn run(event: Event, time_window: Option<i32>, limit: Option<i32>) {
     }));
 
     // Subscribe and display events liked by those authors
-    related_sub.on_eose(cb!(|| unsafe {
+    like_re_sub.on_eose(cb!(|| unsafe {
         let filter = (&mut *RELATED_FILTER.get()).take().unwrap_unchecked();
         filter.subscribe().on_event(cb!(|e| display(&e)));
     }));

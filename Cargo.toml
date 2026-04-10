@@ -3,7 +3,7 @@ resolver = "2"
 members = ["nostr-scrolls", "nostr-scrolls-macros"]
 
 [workspace.package]
-version = "0.44.1"
+version = "0.0.1"
 edition = "2024"
 authors = ["Rust Nostr Developers"]
 homepage = "https://github.com/rust-nostr/nostr-scrolls"
@@ -13,7 +13,7 @@ rust-version = "1.85.0"
 keywords = ["nostr", "scrolls", "wasm"]
 
 [workspace.dependencies]
-nostr-scrolls-macros = { path = "nostr-scrolls-macros" }
+nostr-scrolls-macros = { version = "0.0.1", path = "nostr-scrolls-macros" }
 
 [profile.release]
 opt-level = "z"

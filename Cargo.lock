@@ -30,7 +30,7 @@ dependencies = [
 
 [[package]]
 name = "nostr-scrolls"
-version = "0.44.1"
+version = "0.0.1"
 dependencies = [
  "heapless",
  "nostr-scrolls-macros",
@@ -38,7 +38,7 @@ dependencies = [
 
 [[package]]
 name = "nostr-scrolls-macros"
-version = "0.44.1"
+version = "0.0.1"
 dependencies = [
  "proc-macro2",
  "quote",

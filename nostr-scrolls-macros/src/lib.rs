@@ -11,17 +11,20 @@
 
 extern crate alloc;
 
+mod arg;
+
+use self::arg::ScrollArg;
 use alloc::{string::ToString, vec::Vec};
 use core::option::Option;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{
-    FnArg, Ident, ItemFn, Pat, Type, Visibility,
+    Ident, ItemFn, Visibility,
     parse::{Parse, ParseStream},
     parse_macro_input,
     spanned::Spanned,
-    token::{Comma, Mut},
+    token::Comma,
 };
 
 /// Controls code generation for the `#[main]` macro.
@@ -132,36 +135,15 @@ pub fn main(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     // Extract parameter names and types
-    let params: Vec<(Option<Mut>, Ident, Type)> = input_fn
+    let params: Vec<ScrollArg> = input_fn
         .sig
         .inputs
         .iter()
-        .filter_map(|arg| {
-            if let FnArg::Typed(pat_type) = arg {
-                if let Pat::Ident(pat_ident) = &*pat_type.pat {
-                    Some((
-                        pat_ident.mutability,
-                        pat_ident.ident.clone(),
-                        (*pat_type.ty).clone(),
-                    ))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
+        .filter_map(|arg| ScrollArg::try_from(arg).ok())
         .collect();
 
     // Generate read statements for each parameter
-    let read_statements: Vec<TokenStream2> = params
-        .iter()
-        .map(|(mutability, name, ty)| {
-            quote! {
-                let #mutability #name: #ty = <#ty as nostr_scrolls::ReadParam>::read_param(ptr, &mut offset);
-            }
-        })
-        .collect();
+    let read_statements: Vec<TokenStream2> = params.into_iter().map(TokenStream2::from).collect();
     let body = input_fn.block;
     let fn_attrs = input_fn.attrs;
 

@@ -15,7 +15,6 @@ mod arg;
 
 use self::arg::ScrollArg;
 use alloc::{string::ToString, vec::Vec};
-use core::option::Option;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
@@ -103,35 +102,33 @@ impl Parse for MainAttrs {
 pub fn main(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);
 
+    match inner_main(attr, input_fn) {
+        Ok(tokens) => tokens,
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+fn inner_main(attr: TokenStream, input_fn: ItemFn) -> syn::Result<TokenStream> {
     // Parse attributes
-    let attrs = match syn::parse::<MainAttrs>(attr) {
-        Ok(a) => a,
-        Err(e) => return e.to_compile_error().into(),
-    };
+    let attrs = syn::parse::<MainAttrs>(attr)?;
 
     // Ensure function name is 'run'
     if input_fn.sig.ident != "run" {
-        return syn::Error::new(
+        return Err(syn::Error::new(
             input_fn.sig.ident.span(),
             "function must be named `run` for `nostr_scrolls::main`",
-        )
-        .to_compile_error()
-        .into();
+        ));
     }
 
     // Check if the function is private
-    if let Some(error) = ensure_run_is_private(&input_fn.vis) {
-        return error;
-    }
+    ensure_run_is_private(&input_fn.vis)?;
 
     // Check if the function is async
     if let Some(async_kw) = input_fn.sig.asyncness {
-        return syn::Error::new(
+        return Err(syn::Error::new(
             async_kw.span(),
             "`run` function must be synchronous for `nostr_scrolls::main`",
-        )
-        .to_compile_error()
-        .into();
+        ));
     }
 
     // Extract parameter names and types
@@ -200,23 +197,19 @@ pub fn main(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    TokenStream::from(expanded)
+    Ok(TokenStream::from(expanded))
 }
 
 /// Ensure that the `run` function remains private, returning a compile error otherwise.
-fn ensure_run_is_private(vis: &Visibility) -> Option<TokenStream> {
+fn ensure_run_is_private(vis: &Visibility) -> syn::Result<()> {
     let error_span = match vis {
-        Visibility::Inherited => return None, // It's private, all good!
+        Visibility::Inherited => return Ok(()), // It's private, all good!
         Visibility::Public(pub_kw) => pub_kw.span(),
         Visibility::Restricted(vis_restricted) => vis_restricted.span(),
     };
 
-    Some(
-        syn::Error::new(
-            error_span,
-            "`run` function must be private for `nostr_scrolls::main`",
-        )
-        .to_compile_error()
-        .into(),
-    )
+    Err(syn::Error::new(
+        error_span,
+        "`run` function must be private for `nostr_scrolls::main`",
+    ))
 }

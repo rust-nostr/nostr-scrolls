@@ -32,6 +32,7 @@
 ### Added
 
 - `ReadParam` for `isize` and `usize`
+- macros: `from` attr for parameters
 
 ## v0.0.1 - 2026/04/10
 

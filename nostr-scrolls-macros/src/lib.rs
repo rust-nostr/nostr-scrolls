@@ -64,11 +64,11 @@ impl Parse for MainAttrs {
 /// via `nostr_scrolls::log`. To disable this behavior, use
 /// `#[nostr_scrolls::main(no_panic_handler)]`.
 ///
-/// # Requirements
+/// ## Requirements
 /// - The function must be named `run`
 /// - All parameters must implement `nostr_scrolls::ReadParam`
 ///
-/// # Parameters
+/// ## Parameters
 ///
 /// The arguments in your `run` function must strictly match the order of the
 /// parameters defined in your `kind:1227` event tags. The host provides them
@@ -89,13 +89,37 @@ impl Parse for MainAttrs {
 /// | `timestamp`  | [`u32`] and [`usize`]      |                       |
 /// | `relay`      | [`&str`]                   | Validated by the host |
 ///
-/// # Example
+/// ## Example
 /// ```rust
 /// #[nostr_scrolls::main]
 /// fn run(pkey: PublicKey, event: Event) {
 ///     // Your code here
 /// }
 /// ```
+///
+/// ## `#[from(ty)]` Attribute
+///
+/// Use `#[from(ty)]` to automatically convert a parameter from type `ty` to
+/// your custom type using the `From` trait.
+///
+/// ```rust
+/// #[nostr_scrolls::main]
+/// fn run(#[from(i32)] days: Days) {
+///     // `days` is automatically converted from `i32` to `Days`
+/// }
+/// ```
+///
+/// The macro expands to:
+///
+/// ```rust
+/// let days: Days = <Days as From<i32>>::from(
+///     <i32 as ReadParam>::read_param(ptr, &mut offset)
+/// );
+/// ```
+///
+/// **Note:** Since panics are handled by the runtime, we only support `From`
+/// and not `TryFrom`. Simply panic on invalid input instead of returning an
+/// error.
 ///
 /// [`&str`]: str
 #[proc_macro_attribute]
@@ -132,12 +156,12 @@ fn inner_main(attr: TokenStream, input_fn: ItemFn) -> syn::Result<TokenStream> {
     }
 
     // Extract parameter names and types
-    let params: Vec<ScrollArg> = input_fn
+    let params = input_fn
         .sig
         .inputs
         .iter()
-        .filter_map(|arg| ScrollArg::try_from(arg).ok())
-        .collect();
+        .filter_map(|arg| ScrollArg::from_fn_arg(arg).transpose())
+        .collect::<syn::Result<Vec<_>>>()?;
 
     // Generate read statements for each parameter
     let read_statements: Vec<TokenStream2> = params.into_iter().map(TokenStream2::from).collect();

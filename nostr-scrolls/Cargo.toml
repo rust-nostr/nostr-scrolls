@@ -18,8 +18,15 @@ heapless = { version = "0.9.1", features = ["portable-atomic"] }
 [features]
 debug-strings = []
 
+[package.metadata.docs.rs]
+targets = ["wasm32-unknown-unknown"]
+all-features = true
+
 [[example]]
 name = "simple"
 
 [[example]]
 name = "resonate"
+
+[[example]]
+name = "attr_from"

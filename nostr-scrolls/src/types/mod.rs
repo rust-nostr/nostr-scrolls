@@ -5,12 +5,14 @@
 
 mod event;
 mod filter;
+mod numbers;
 mod subscription;
 
 use core::slice;
 
 pub use event::Event;
 pub use filter::Filter;
+pub use numbers::*;
 pub use subscription::Subscription;
 
 use crate::{ReadParam, utils};

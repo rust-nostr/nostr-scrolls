@@ -34,6 +34,7 @@
 - `ReadParam` for `isize` and `usize`
 - macros: `from` attr for parameters
 - macros: support `Option` in `from` attr
+- new `PositiveNumber` and `NegativeNumber` types
 
 ## v0.0.1 - 2026/04/10
 

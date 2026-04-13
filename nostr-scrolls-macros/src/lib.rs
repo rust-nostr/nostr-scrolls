@@ -164,7 +164,10 @@ fn inner_main(attr: TokenStream, input_fn: ItemFn) -> syn::Result<TokenStream> {
         .collect::<syn::Result<Vec<_>>>()?;
 
     // Generate read statements for each parameter
-    let read_statements: Vec<TokenStream2> = params.into_iter().map(TokenStream2::from).collect();
+    let read_statements = params
+        .into_iter()
+        .map(TokenStream2::try_from)
+        .collect::<syn::Result<Vec<_>>>()?;
     let body = input_fn.block;
     let fn_attrs = input_fn.attrs;
 

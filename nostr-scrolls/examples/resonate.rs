@@ -23,7 +23,6 @@
 
 #![no_std]
 #![no_main]
-#![allow(unused_must_use)]
 
 extern crate alloc;
 

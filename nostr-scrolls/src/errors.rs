@@ -1,9 +1,6 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-/// Internal result type.
-pub(crate) type Result<T> = core::result::Result<T, Error>;
-
 /// nostr-scrolls errors
 #[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
 pub enum Error {

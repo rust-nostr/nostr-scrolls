@@ -43,7 +43,6 @@ impl Days {
     }
 }
 
-#[allow(unused_must_use)]
 #[nostr_scrolls::main]
 fn run(event: Event, #[from(i32)] day_window: Days) {
     let mut filter = Filter::new();

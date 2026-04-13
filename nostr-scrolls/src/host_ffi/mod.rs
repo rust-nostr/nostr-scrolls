@@ -9,6 +9,8 @@ mod utils;
 #[allow(dead_code)]
 #[link(wasm_import_module = "nostr")]
 unsafe extern "C" {
+    // -- Filter functions -- //
+
     /// Create a new empty request handle.
     fn req_new() -> i32;
 
@@ -28,7 +30,7 @@ unsafe extern "C" {
     fn req_add_id_hex(req: i32, id_hex_ptr: *const u8);
 
     /// Add a kind integer to the `kinds` filter.
-    fn req_add_kind(req: i32, kind: i32);
+    fn req_add_kind(req: i32, kind: u16);
 
     /// Add a value to a tag filter. `tag` is the ASCII code of the letter (e.g.
     /// `112` is `"p"` and will be added to the filter as `"#p"`); `value_ptr/value_len`
@@ -42,13 +44,13 @@ unsafe extern "C" {
     fn req_add_tag_bin32(req: i32, tag: i32, value_ptr: *const u8);
 
     /// Sets the `"limit"` attribute of the filter.
-    fn req_set_limit(req: i32, limit: i32);
+    fn req_set_limit(req: i32, limit: u32);
 
     /// Sets the `"since"` attribute of the filter.
-    fn req_set_since(req: i32, timestamp: i32);
+    fn req_set_since(req: i32, timestamp: u32);
 
     /// Sets the `"until"` attribute of the filter.
-    fn req_set_until(req: i32, timestamp: i32);
+    fn req_set_until(req: i32, timestamp: u32);
 
     /// Sets the `"search"` attribute of the filter.
     fn req_set_search(req: i32, ptr: *const u8, len: i32);
@@ -62,6 +64,8 @@ unsafe extern "C" {
     /// Sends the REQ to the target relays and returns a subscription handle.
     /// The request handle is consumed by this call — do not drop it separately.
     fn subscribe(req: i32) -> i32;
+
+    // -- Event functions -- //
 
     /// Returns a pointer to a 32-byte buffer containing the event ID.
     fn event_get_id(event_handle: i32) -> *const u8;
@@ -78,29 +82,29 @@ unsafe extern "C" {
     fn event_get_pubkey_hex(event_handle: i32) -> *const u8;
 
     /// Returns the kind integer directly.
-    fn event_get_kind(event_handle: i32) -> i32;
+    fn event_get_kind(event_handle: i32) -> u16;
 
     /// Returns the unix timestamp directly.
-    fn event_get_created_at(event_handle: i32) -> i32;
+    fn event_get_created_at(event_handle: i32) -> u32;
 
     /// Returns a pointer to a buffer containing the event content.
     fn event_get_content(event_handle: i32) -> *const u8;
 
     /// Returns the total number of tags on this event.
-    fn event_get_tag_count(event_handle: i32) -> i32;
+    fn event_get_tag_count(event_handle: i32) -> u32;
 
     /// Returns the number of items in the tag at `tag_index`. `0` if no tag in
     /// the given index
-    fn event_get_tag_item_count(event_handle: i32, tag_index: i32) -> i32;
+    fn event_get_tag_item_count(event_handle: i32, tag_index: u32) -> u32;
 
     /// Returns a pointer to a buffer containing the item at `(tag_index,
     /// item_index)`. `0` if no tag or value in the given index
-    fn event_get_tag_item(event_handle: i32, tag_index: i32, item_index: i32) -> *const u8;
+    fn event_get_tag_item(event_handle: i32, tag_index: u32, item_index: u32) -> *const u8;
 
     /// Same as `event_get_tag_item`, but returns a pointer to a 32-byte buffer
     /// of the item if it happened to be a pubkey or an event id; `0` if no tag or item
     /// in the given index or the value is not 64-byte hex string.
-    fn event_get_tag_item_bin32(event_handle: i32, tag_index: i32, item_index: i32) -> *const u8;
+    fn event_get_tag_item_bin32(event_handle: i32, tag_index: u32, item_index: u32) -> *const u8;
 
     /// Finds the first tag whose name (item 0) matches the string at
     /// `name_ptr/name_len`, then returns a pointer to a buffer containing item
@@ -109,7 +113,7 @@ unsafe extern "C" {
         event_handle: i32,
         name_ptr: *const u8,
         name_len: i32,
-        item_index: i32,
+        item_index: u32,
     ) -> *const u8;
 
     /// Same as `event_get_tag_item_by_name`, but returns a pointer to a 32-byte
@@ -119,8 +123,10 @@ unsafe extern "C" {
         event_handle: i32,
         name_ptr: *const u8,
         name_len: i32,
-        item_index: i32,
+        item_index: u32,
     ) -> *const u8;
+
+    // -- Functions -- //
 
     /// Render an event through the client's native note renderer. The event
     /// handle is not consumed.

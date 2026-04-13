@@ -1,29 +1,6 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::{Error, Result};
-
-/// Ensures a length matches an expected value, failing with a detailed mismatch error.
-#[inline(always)]
-pub(crate) fn compare_size(size: usize, expected: usize) -> Result<()> {
-    if size != expected {
-        return Err(Error::SizeMismatch {
-            expected,
-            found: size,
-        });
-    }
-    Ok(())
-}
-
-/// Validates that a byte length fits within a signed 32‑bit integer.
-#[inline(always)]
-pub(crate) fn ensure_size(size: usize) -> Result<()> {
-    if size > i32::MAX as usize {
-        return Err(Error::SizeOverflow);
-    }
-    Ok(())
-}
-
 /// Copies a slice from a raw pointer into an owned fixed-size array.
 ///
 /// # Panics

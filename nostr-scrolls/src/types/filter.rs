@@ -2,7 +2,7 @@
 // Distributed under the MIT software license
 
 use crate::{
-    Error, EventId, PublicKey, Result, Subscription,
+    EventId, PublicKey, Subscription,
     host_ffi::{drop as ffi_drop, safe_wrapper},
 };
 
@@ -40,9 +40,12 @@ impl Filter {
         safe_wrapper::req_add_author(self, pkey);
     }
 
-    /// Add an author by 64-character hexadecimal public key.
+    /// Require events to be authored by the 64-character hex public key.
+    ///
+    /// ## Panics
+    /// Panics if `pkey.len() != 64`.
     #[inline(always)]
-    pub fn author_hex(&mut self, pkey: &str) -> Result<()> {
+    pub fn author_hex(&mut self, pkey: &str) {
         safe_wrapper::req_add_author_hex(self, pkey)
     }
 
@@ -53,8 +56,11 @@ impl Filter {
     }
 
     /// Add an event ID by 64-character hexadecimal string.
+    ///
+    /// ## Panics
+    /// Panics if `event_id.len() != 64`.
     #[inline(always)]
-    pub fn id_hex(&mut self, event_id: &str) -> Result<()> {
+    pub fn id_hex(&mut self, event_id: &str) {
         safe_wrapper::req_add_id_hex(self, event_id)
     }
 
@@ -66,67 +72,53 @@ impl Filter {
 
     /// Include events matching a single-letter tag with a string value.
     ///
-    /// Returns `Error::SizeOverflow` if `value` length exceeds `i32::MAX`.
-    /// `tag` must be an ASCII alphabetic character; returns `Error::InvalidTag`
-    /// otherwise.
+    /// # Panics
+    /// Panic if the given tag is not ASCII alphabetic
     #[inline(always)]
-    pub fn tag(&mut self, tag: char, value: &str) -> Result<()> {
-        if !tag.is_ascii_alphabetic() {
-            return Err(Error::InvalidTag);
-        }
+    pub fn tag(&mut self, tag: char, value: &str) {
+        assert!(tag.is_ascii_alphabetic());
         safe_wrapper::req_add_tag(self, tag, value)
     }
 
     /// Include events matching a single-letter tag with a fixed-size binary value.
     ///
-    /// `bytes` must be exactly 32 bytes. `tag` must be an ASCII alphabetic
-    /// character; returns `Error::InvalidTag` otherwise.
+    /// # Panics
+    /// Panics if `tag` is not ASCII alphabetic or `bytes` is not exactly 32 bytes
     #[inline(always)]
-    pub fn tag_bytes(&mut self, tag: char, bytes: &[u8]) -> Result<()> {
-        if !tag.is_ascii_alphabetic() {
-            return Err(Error::InvalidTag);
-        }
+    #[doc(alias = "add_tag_bin32")]
+    pub fn tag_bytes(&mut self, tag: char, bytes: &[u8]) {
+        assert!(tag.is_ascii_alphabetic());
         safe_wrapper::req_add_tag_bin32(self, tag, bytes)
     }
 
     /// Limits the number of events returned by the filter.
-    ///
-    /// Errors if `limit` exceeds [`i32::MAX`].
     #[inline(always)]
-    pub fn limit(&mut self, limit: usize) -> Result<()> {
+    pub fn limit(&mut self, limit: usize) {
         safe_wrapper::req_set_limit(self, limit)
     }
 
     /// Only return events created after this timestamp.
-    ///
-    /// Errors if `since` exceeds [`i32::MAX`].
     #[inline(always)]
-    pub fn since(&mut self, since: usize) -> Result<()> {
+    pub fn since(&mut self, since: usize) {
         safe_wrapper::req_set_since(self, since)
     }
 
     /// Only return events created before this timestamp.
-    ///
-    /// Errors if `until` exceeds [`i32::MAX`].
     #[inline(always)]
-    pub fn until(&mut self, until: usize) -> Result<()> {
+    pub fn until(&mut self, until: usize) {
         safe_wrapper::req_set_until(self, until)
     }
 
     /// Filters events by content substring match.
-    ///
-    /// Errors if `search` byte length exceeds [`i32::MAX`].
     #[inline(always)]
-    pub fn search(&mut self, search: &str) -> Result<()> {
+    pub fn search(&mut self, search: &str) {
         safe_wrapper::req_set_search(self, search)
     }
 
     /// Adds a relay target for this subscription, can be called multiple time.
-    ///
-    /// Errors if `relay` byte length exceeds [`i32::MAX`].
     #[inline(always)]
     #[doc(alias = "add_relay")]
-    pub fn send_to(&mut self, relay: &str) -> Result<()> {
+    pub fn send_to(&mut self, relay: &str) {
         safe_wrapper::req_add_relay(self, relay)
     }
 

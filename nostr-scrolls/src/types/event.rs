@@ -2,7 +2,7 @@
 // Distributed under the MIT software license
 
 use crate::{
-    EventId, PublicKey, ReadParam, Result,
+    EventId, PublicKey, ReadParam,
     host_ffi::{drop as ffi_drop, safe_wrapper},
     utils,
 };
@@ -83,37 +83,35 @@ impl Event {
     /// Number of items in a specific tag by index.
     ///
     /// Returns `None` when the tag index is out of bounds.
-    /// Error if `tag_index` exceeds `i32::MAX`.
     #[inline(always)]
-    pub fn tag_items_count(&self, tag_index: usize) -> Result<Option<usize>> {
+    pub fn tag_items_count(&self, tag_index: usize) -> Option<usize> {
         safe_wrapper::event_get_tag_item_count(self, tag_index)
     }
 
     /// String value of a specific tag item by index.
     ///
     /// Returns `None` when either index is out of bounds.
-    /// Error if `tag_index` exceeds `i32::MAX`.
     #[inline(always)]
-    pub fn tag_item(&self, tag_index: usize, item_index: usize) -> Result<Option<&str>> {
+    pub fn tag_item(&self, tag_index: usize, item_index: usize) -> Option<&str> {
         safe_wrapper::event_get_tag_item(self, tag_index, item_index)
     }
 
     /// Decoded bytes of a 64-byte hex tag item by index.
     ///
     /// Returns `None` when either index is out of bounds, or if the value is
-    /// not valid hexadecimal or not exactly 64 bytes. Error if `tag_index`
-    /// exceeds `i32::MAX`.
+    /// not valid hexadecimal or not exactly 64 bytes.
     #[inline(always)]
-    pub fn tag_item_bytes(&self, tag_index: usize, item_index: usize) -> Result<Option<&[u8]>> {
+    #[doc(alias = "get_tag_item_bin32")]
+    pub fn tag_item_bytes(&self, tag_index: usize, item_index: usize) -> Option<&[u8]> {
         safe_wrapper::event_get_tag_item_bin32(self, tag_index, item_index)
     }
 
     /// String value of a tag item by tag name.
     ///
     /// Returns `None` if no tag with this name exists or the item index is out
-    /// of bounds. Error if `tag_index` exceeds `i32::MAX`.
+    /// of bounds.
     #[inline(always)]
-    pub fn tag_item_by_name(&self, name: &str, item_index: usize) -> Result<Option<&str>> {
+    pub fn tag_item_by_name(&self, name: &str, item_index: usize) -> Option<&str> {
         safe_wrapper::event_get_tag_item_by_name(self, name, item_index)
     }
 
@@ -123,7 +121,8 @@ impl Event {
     /// bounds, or the value is not valid hexadecimal or not exactly 64 bytes.
     /// Error if `tag_index` exceeds `i32::MAX`.
     #[inline(always)]
-    pub fn tag_item_by_name_bytes(&self, name: &str, item_index: usize) -> Result<Option<&[u8]>> {
+    #[doc(alias = "get_tag_item_by_name_bin32")]
+    pub fn tag_item_by_name_bytes(&self, name: &str, item_index: usize) -> Option<&[u8]> {
         safe_wrapper::event_get_tag_item_by_name_bin32(self, name, item_index)
     }
 }

@@ -17,7 +17,6 @@ extern crate alloc;
 
 use nostr_scrolls::{Filter, PublicKey, cb};
 
-#[allow(unused_must_use)]
 #[nostr_scrolls::main]
 fn run(me: PublicKey, mut limit: Option<i32>, relay: Option<&str>) {
     nostr_scrolls::log("Running simple example: Fetching your notes tagged with #asknostr");

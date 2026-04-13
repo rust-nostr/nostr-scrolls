@@ -5,7 +5,7 @@
 
 use core::str;
 
-use crate::{Event, EventId, Filter, PublicKey, Result, Subscription, host_ffi::utils};
+use crate::{Event, EventId, Filter, PublicKey, Subscription, host_ffi::utils};
 
 const BYTES_LEN: usize = 32;
 const HEX_LEN: usize = 64;
@@ -24,69 +24,53 @@ pub(crate) fn req_new() -> Filter {
 /// A wrapper around [`super::req_add_author`]. Used by [`Filter`]
 #[inline(always)]
 pub(crate) fn req_add_author(filter: &Filter, pubkey: &PublicKey) {
-    unsafe {
-        super::req_add_author(filter.handle, pubkey.0.as_ptr());
-    }
+    unsafe { super::req_add_author(filter.handle, pubkey.0.as_ptr()) }
 }
 
 /// A wrapper around [`super::req_add_author_hex`]. Used by [`Filter`].
 ///
 /// - The hex should be 64 bytes string
 #[inline(always)]
-pub(crate) fn req_add_author_hex(filter: &Filter, pubkey_hex: &str) -> Result<()> {
-    utils::compare_size(pubkey_hex.len(), HEX_LEN)?;
+pub(crate) fn req_add_author_hex(filter: &Filter, pubkey_hex: &str) {
+    assert_eq!(pubkey_hex.len(), HEX_LEN);
 
-    unsafe {
-        super::req_add_author_hex(filter.handle, pubkey_hex.as_ptr());
-        Ok(())
-    }
+    unsafe { super::req_add_author_hex(filter.handle, pubkey_hex.as_ptr()) }
 }
 
 /// A wrapper around [`super::req_add_id`]. Used by [`Filter`]
 #[inline(always)]
 pub(crate) fn req_add_id(filter: &Filter, event_id: &EventId) {
-    unsafe {
-        super::req_add_id(filter.handle, event_id.0.as_ptr());
-    }
+    unsafe { super::req_add_id(filter.handle, event_id.0.as_ptr()) }
 }
 
 /// A wrapper around [`super::req_add_id_hex`]. Used by [`Filter`]
 ///
 /// - The hex should be 64 bytes string
 #[inline(always)]
-pub(crate) fn req_add_id_hex(filter: &Filter, id_hex: &str) -> Result<()> {
-    utils::compare_size(id_hex.len(), HEX_LEN)?;
+pub(crate) fn req_add_id_hex(filter: &Filter, id_hex: &str) {
+    assert_eq!(id_hex.len(), HEX_LEN);
 
-    unsafe {
-        super::req_add_id_hex(filter.handle, id_hex.as_ptr());
-        Ok(())
-    }
+    unsafe { super::req_add_id_hex(filter.handle, id_hex.as_ptr()) }
 }
 
 /// A wrapper around [`super::req_add_kind`]. Used by [`Filter`]
 #[inline(always)]
 pub(crate) fn req_add_kind(filter: &Filter, kind: u16) {
-    unsafe {
-        super::req_add_kind(filter.handle, kind as i32);
-    }
+    unsafe { super::req_add_kind(filter.handle, kind) }
 }
 
 /// A wrapper around [`super::req_add_tag`]. Used by [`Filter`]
-///
-/// - The `tag` should be an ASCII alphabetic character
-/// - The `value` length should be less than [`i32::MAX`]
 #[inline(always)]
-pub(crate) fn req_add_tag(filter: &Filter, tag: char, value: &str) -> Result<()> {
-    utils::ensure_size(value.len())?;
-
+pub(crate) fn req_add_tag(filter: &Filter, tag: char, value: &str) {
+    // Note: You can't allocate more than `isize::MAX`, which is `i32::MAX` in
+    // `wasm32`
     unsafe {
         super::req_add_tag(
             filter.handle,
             tag as i32,
             value.as_ptr(),
             value.len() as i32,
-        );
-        Ok(())
+        )
     }
 }
 
@@ -95,78 +79,44 @@ pub(crate) fn req_add_tag(filter: &Filter, tag: char, value: &str) -> Result<()>
 /// - The `tag` should be an ASCII alphabetic character
 /// - The value should be 32 bytes
 #[inline(always)]
-pub(crate) fn req_add_tag_bin32(filter: &Filter, tag: char, value: &[u8]) -> Result<()> {
-    utils::compare_size(value.len(), BYTES_LEN)?;
+pub(crate) fn req_add_tag_bin32(filter: &Filter, tag: char, value: &[u8]) {
+    assert_eq!(value.len(), BYTES_LEN);
 
-    unsafe {
-        super::req_add_tag_bin32(filter.handle, tag as i32, value.as_ptr());
-        Ok(())
-    }
+    unsafe { super::req_add_tag_bin32(filter.handle, tag as i32, value.as_ptr()) }
 }
 
 /// A wrapper around [`super::req_set_limit`]. Used by [`Filter`].
-///
-/// - The `limit` length should be greater than zero
 #[inline(always)]
-pub(crate) fn req_set_limit(filter: &Filter, limit: usize) -> Result<()> {
-    utils::ensure_size(limit)?;
-
-    unsafe {
-        super::req_set_limit(filter.handle, limit as i32);
-        Ok(())
-    }
+pub(crate) fn req_set_limit(filter: &Filter, limit: usize) {
+    unsafe { super::req_set_limit(filter.handle, limit as u32) }
 }
 
 /// A wrapper around [`super::req_set_since`]. Used by [`Filter`].
-///
-/// - The `timestamp` length should be greater than zero
 #[inline(always)]
-pub(crate) fn req_set_since(filter: &Filter, timestamp: usize) -> Result<()> {
-    utils::ensure_size(timestamp)?;
-
-    unsafe {
-        super::req_set_since(filter.handle, timestamp as i32);
-        Ok(())
-    }
+pub(crate) fn req_set_since(filter: &Filter, timestamp: usize) {
+    unsafe { super::req_set_since(filter.handle, timestamp as u32) }
 }
 
 /// A wrapper around [`super::req_set_until`]. Used by [`Filter`].
-///
-/// - The `timestamp` length should be greater than zero
 #[inline(always)]
-pub(crate) fn req_set_until(filter: &Filter, timestamp: usize) -> Result<()> {
-    utils::ensure_size(timestamp)?;
-
-    unsafe {
-        super::req_set_until(filter.handle, timestamp as i32);
-        Ok(())
-    }
+pub(crate) fn req_set_until(filter: &Filter, timestamp: usize) {
+    unsafe { super::req_set_until(filter.handle, timestamp as u32) }
 }
 
 /// A wrapper around [`super::req_set_search`]. Used by [`Filter`].
-///
-/// - The `search` length should be less than [`i32::MAX`]
 #[inline(always)]
-pub(crate) fn req_set_search(filter: &Filter, search: &str) -> Result<()> {
-    utils::ensure_size(search.len())?;
-
-    unsafe {
-        super::req_set_search(filter.handle, search.as_ptr(), search.len() as i32);
-        Ok(())
-    }
+pub(crate) fn req_set_search(filter: &Filter, search: &str) {
+    // Note: You can't allocate more than `isize::MAX`, which is `i32::MAX` in
+    // `wasm32`
+    unsafe { super::req_set_search(filter.handle, search.as_ptr(), search.len() as i32) }
 }
 
 /// A wrapper around [`super::req_add_relay`]. Used by [`Filter`].
-///
-/// - The `relay` length should be less than [`i32::MAX`]
 #[inline(always)]
-pub(crate) fn req_add_relay(filter: &Filter, relay: &str) -> Result<()> {
-    utils::ensure_size(relay.len())?;
-
-    unsafe {
-        super::req_add_relay(filter.handle, relay.as_ptr(), relay.len() as i32);
-        Ok(())
-    }
+pub(crate) fn req_add_relay(filter: &Filter, relay: &str) {
+    // Note: You can't allocate more than `isize::MAX`, which is `i32::MAX` in
+    // `wasm32`
+    unsafe { super::req_add_relay(filter.handle, relay.as_ptr(), relay.len() as i32) }
 }
 
 /// A wrapper around [`super::req_close_on_eose`]. Used by [`Filter`].
@@ -248,48 +198,38 @@ pub(crate) fn event_get_tag_count(event: &Event) -> usize {
 
 /// A wrapper around [`super::event_get_tag_item_count`]. Used by [`Event`].
 ///
-/// - The `tag_index` should be less than [`i32::MAX`]
 /// - Returns [`Option::None`] if there is no tag in the given index
 #[inline(always)]
-pub(crate) fn event_get_tag_item_count(event: &Event, tag_index: usize) -> Result<Option<usize>> {
-    utils::ensure_size(tag_index)?;
-
+pub(crate) fn event_get_tag_item_count(event: &Event, tag_index: usize) -> Option<usize> {
     unsafe {
-        let count = super::event_get_tag_item_count(event.handle, tag_index as i32) as usize;
+        let count = super::event_get_tag_item_count(event.handle, tag_index as u32) as usize;
         if count == 0 {
-            return Ok(None);
+            return None;
         }
-        Ok(Some(count))
+        Some(count)
     }
 }
 
 /// A wrapper around [`super::event_get_tag_item`]. Used by [`Event`].
 ///
-/// - The `tag_index` should be less than [`i32::MAX`]
-/// - The `item_index` should be less than [`i32::MAX`]
 /// - Return [`Option::None`] if no tag or item with the given index
 #[inline(always)]
 pub(crate) fn event_get_tag_item(
     event: &Event,
     tag_index: usize,
     item_index: usize,
-) -> Result<Option<&str>> {
-    utils::ensure_size(tag_index)?;
-    utils::ensure_size(item_index)?;
-
+) -> Option<&str> {
     unsafe {
-        let ptr = super::event_get_tag_item(event.handle, tag_index as i32, item_index as i32);
+        let ptr = super::event_get_tag_item(event.handle, tag_index as u32, item_index as u32);
         if ptr.is_null() {
-            return Ok(None);
+            return None;
         }
-        Ok(Some(utils::read_slice_string(ptr)))
+        Some(utils::read_slice_string(ptr))
     }
 }
 
 /// A wrapper around [`super::event_get_tag_item_bin32`]. Used by [`Event`].
 ///
-/// - The `tag_index` should be less than [`i32::MAX`]
-/// - The `item_index` should be less than [`i32::MAX`]
 /// - Returns [`Option::None`] if:
 ///   - No tag in the given index
 ///   - No item in the given index
@@ -299,25 +239,20 @@ pub(crate) fn event_get_tag_item_bin32(
     event: &Event,
     tag_index: usize,
     item_index: usize,
-) -> Result<Option<&[u8]>> {
-    utils::ensure_size(tag_index)?;
-    utils::ensure_size(item_index)?;
-
+) -> Option<&[u8]> {
     unsafe {
         let ptr =
-            super::event_get_tag_item_bin32(event.handle, tag_index as i32, item_index as i32);
+            super::event_get_tag_item_bin32(event.handle, tag_index as u32, item_index as u32);
         if ptr.is_null() {
-            return Ok(None);
+            return None;
         }
 
-        Ok(Some(utils::read_slice(ptr, 32)))
+        Some(utils::read_slice(ptr, 32))
     }
 }
 
 /// A wrapper around [`super::event_get_tag_item_by_name`]. Used by [`Event`].
 ///
-/// - The `name` length should be less than [`i32::MAX`]
-/// - The `item_index` should be less than [`i32::MAX`]
 /// - Returns [`Option::None`] if:
 ///   - No tag with the given name. (item index 0)
 ///   - No item in the given index
@@ -326,30 +261,27 @@ pub(crate) fn event_get_tag_item_by_name<'a>(
     event: &'a Event,
     name: &str,
     item_index: usize,
-) -> Result<Option<&'a str>> {
-    utils::ensure_size(name.len())?;
-    utils::ensure_size(item_index)?;
-
+) -> Option<&'a str> {
+    // Note: You can't allocate more than `isize::MAX`, which is `i32::MAX` in
+    // `wasm32`
     unsafe {
         let ptr = super::event_get_tag_item_by_name(
             event.handle,
             name.as_ptr(),
             name.len() as i32,
-            item_index as i32,
+            item_index as u32,
         );
 
         if ptr.is_null() {
-            return Ok(None);
+            return None;
         }
 
-        Ok(Some(utils::read_slice_string(ptr)))
+        Some(utils::read_slice_string(ptr))
     }
 }
 
 /// A wrapper around [`super::event_get_tag_item_by_name_bin32`]. Used by [`Event`].
 ///
-/// - The `name` length should be less than [`i32::MAX`]
-/// - The `item_index` should be less than [`i32::MAX`]
 /// - Returns [`Option::None`] if:
 ///   - No tag with the given name. (item index 0)
 ///   - No item in the given index
@@ -359,23 +291,20 @@ pub(crate) fn event_get_tag_item_by_name_bin32<'a>(
     event: &'a Event,
     name: &str,
     item_index: usize,
-) -> Result<Option<&'a [u8]>> {
-    utils::ensure_size(name.len())?;
-    utils::ensure_size(item_index)?;
-
+) -> Option<&'a [u8]> {
     unsafe {
         let ptr = super::event_get_tag_item_by_name_bin32(
             event.handle,
             name.as_ptr(),
             name.len() as i32,
-            item_index as i32,
+            item_index as u32,
         );
 
         if ptr.is_null() {
-            return Ok(None);
+            return None;
         }
 
-        Ok(Some(utils::read_slice(ptr, 32)))
+        Some(utils::read_slice(ptr, 32))
     }
 }
 
@@ -391,11 +320,6 @@ pub fn display(event: &Event) {
 
 /// Emit a log message to the host's debug console or developer tooling.
 #[inline(always)]
-pub fn log(msg: &str) -> Result<()> {
-    utils::ensure_size(msg.len())?;
-
-    unsafe {
-        super::log(msg.as_ptr(), msg.len() as i32);
-        Ok(())
-    }
+pub fn log(msg: &str) {
+    unsafe { super::log(msg.as_ptr(), msg.len() as i32) }
 }

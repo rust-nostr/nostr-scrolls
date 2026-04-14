@@ -45,12 +45,13 @@ impl Days {
 
 #[nostr_scrolls::main]
 fn run(event: Event, #[from(i32)] day_window: Days) {
-    let mut filter = Filter::new();
-    filter.kind(1);
-    filter.author(&event.pubkey());
-    filter.since(event.created_at() - day_window.as_secs());
-    filter.until(event.created_at() + day_window.as_secs());
-    filter.subscribe().on_event(cb!(|e| display(&e)));
+    Filter::new()
+        .kind(1)
+        .author(&event.pubkey())
+        .since(event.created_at() - day_window.as_secs())
+        .until(event.created_at() + day_window.as_secs())
+        .subscribe()
+        .on_event(cb!(|e| display(&e)));
 }
 
 // Expanded code will looks like:

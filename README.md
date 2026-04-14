@@ -18,23 +18,21 @@ panic handler that logs errors before termination.
 
 extern crate alloc;
 
-use nostr_scrolls::{PublicKey, Filter, cb};
+use nostr_scrolls::{PublicKey, Filter, cb, display};
 
-#[allow(unused_must_use)]
 #[nostr_scrolls::main]
 fn run(me: PublicKey) {
-  let mut filter = Filter::new();
-  filter.author(&me);
-  filter.kind(1);
-  filter.close_on_eose();
-  filter.tag('t', "asknostr");
-
-  let sub = filter.subscribe();
-  sub.on_event(cb!(|event| nostr_scrolls::display(&event)));
+  let sub = Filter::new()
+    .author(&me)
+    .kind(1)
+    .close_on_eose()
+    .tag('t', "asknostr")
+    .subscribe()
+    .on_event(cb!(|event| display(&event)));
 }
 ```
 
-More examples can be found in the [examples directory](./examples).
+More examples can be found in the `examples` directory.
 
 ## Features
 
@@ -53,14 +51,14 @@ and search for `4core3fmt`. If it's there fix your program.
 
 ## Global allocator
 
-This crate creates a global bump allocator, so your std code or `alloc`
-will use it. The bump allocator is simple, you can find it here:
-[allocator.rs](./nostr-scrolls/src/allocator.rs). This allocator just pushes the
-WASM linear memory; it doesn't free memory, so don't overuse it.
+This crate creates a global bump allocator, so your std code or
+`alloc` will use it. The bump allocator is simple, you can find it in
+`nostr-scrolls/src/allocator.rs`. This allocator just pushes the WASM linear
+memory; it doesn't free memory, so don't overuse it.
 
 ## Changelog
 
-All notable changes to this library are documented in the [CHANGELOG.md](./CHANGELOG.md).
+All notable changes to this library are documented in the `CHANGELOG.md` file.
 
 ## State
 
@@ -76,6 +74,6 @@ actively use any of the `rust-nostr` libs/software/services, then please
 
 ## License
 
-This project is distributed under the MIT software license - see the
-[LICENSE](./LICENSE) file for details
+This project is distributed under the MIT software license - see the `LICENSE`
+file for details
 

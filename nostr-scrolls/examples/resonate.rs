@@ -42,15 +42,15 @@ fn related_filter(target_ts: usize, time_window: Option<i32>, limit: Option<i32>
         .and_then(|days| days.checked_mul(24 * 60 * 60))
         .unwrap_or(SEVEN_DAYS) as usize;
 
-    let mut filter = Filter::new();
-    filter.kind(REPOST_KIND);
-    filter.kind(REACTION_KIND);
-    filter.since(target_ts - time_window);
-    filter.until(target_ts + time_window);
-    filter.close_on_eose();
+    let mut filter = Filter::new()
+        .kind(REPOST_KIND)
+        .kind(REACTION_KIND)
+        .since(target_ts - time_window)
+        .until(target_ts + time_window)
+        .close_on_eose();
 
     if let Some(limit) = limit {
-        filter.limit(limit as usize);
+        filter = filter.limit(limit as usize);
     }
 
     filter
@@ -71,21 +71,18 @@ fn run(event: Event, time_window: Option<i32>, limit: Option<i32>) {
     unsafe { *RELATED_FILTER.get() = Some(related_filter(event.created_at(), time_window, limit)) };
 
     // Find likes and reposts for this event
-    let mut like_re_req = Filter::new();
-    like_re_req.kind(REPOST_KIND);
-    like_re_req.kind(REACTION_KIND);
-    like_re_req.tag('e', event.id_hex());
-    like_re_req.tag('p', event.pubkey_hex());
-    like_re_req.close_on_eose();
-
-    let like_re_sub = like_re_req.subscribe();
+    let like_re_sub = Filter::new()
+        .kind(REPOST_KIND)
+        .kind(REACTION_KIND)
+        .tag('e', event.id_hex())
+        .tag('p', event.pubkey_hex())
+        .close_on_eose()
+        .subscribe();
 
     // Add authors of likes/reposts to filter
     like_re_sub.on_event(cb!(|event| unsafe {
-        (*RELATED_FILTER.get())
-            .as_mut()
-            .unwrap_unchecked()
-            .author(&event.pubkey())
+        let filter = (*RELATED_FILTER.get()).take().unwrap_unchecked();
+        (*RELATED_FILTER.get()) = Some(filter.author(&event.pubkey()));
     }));
 
     // Subscribe and display events liked by those authors

@@ -62,9 +62,9 @@ impl EoseCallback {
 /// ```rust,ignore
 /// use nostr_scrolls::{Filter, cb, cb_ret};
 ///
-/// let mut filter = Filter::new();
-/// filter.kind(1);
-/// filter.limit(10);
+/// let mut filter = Filter::new()
+///     .kind(1)
+///     .limit(10);
 ///
 /// let sub = filter.subscribe();
 /// sub.on_event(cb!(|event| /* ... */)); // A callback that only take an event
@@ -97,9 +97,9 @@ macro_rules! cb {
 /// ```rust,ignore
 /// use nostr_scrolls::{Filter, cb, cb_ret};
 ///
-/// let mut filter = Filter::new();
-/// filter.kind(1);
-/// filter.limit(10);
+/// let mut filter = Filter::new()
+///     .kind(1)
+///     .limit(10);
 ///
 /// let sub = filter.subscribe();
 /// sub.on_event(cb_ret!(|event| /* bool */)); // A callback that only take an

@@ -25,19 +25,19 @@ fn run(
 ) {
     nostr_scrolls::log("Running simple example: Fetching your notes tagged with #asknostr");
 
-    let mut filter = Filter::new();
-    filter.author(&me);
-    filter.kind(1);
-    filter.close_on_eose();
-    filter.tag('t', "asknostr");
+    let mut filter = Filter::new()
+        .author(&me)
+        .kind(1)
+        .close_on_eose()
+        .tag('t', "asknostr");
 
     limit = limit.map(|l| l + 1);
     if let Some(limit) = limit {
-        filter.limit(limit);
+        filter = filter.limit(limit);
     }
 
     if let Some(relay) = relay {
-        filter.send_to(relay);
+        filter = filter.send_to(relay);
     }
 
     let sub = filter.subscribe();

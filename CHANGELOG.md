@@ -38,6 +38,11 @@
 - take the ownership in `Filter` functions
 - use the correct ffi function for `event_get_pubkey*`
 - new `StaticCell` type
+- new `StaticFilter` type
+
+### Removed
+
+- macros: filename from panic logs
 
 ## v0.0.1 - 2026/04/10
 

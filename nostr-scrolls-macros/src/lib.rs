@@ -195,10 +195,6 @@ fn inner_main(attr: TokenStream, input_fn: ItemFn) -> syn::Result<TokenStream> {
                 _ = nostr_scrolls::log("PANIC!");
                 _ = nostr_scrolls::log(msg);
 
-                if let Some(location) = info.location() {
-                    _ = nostr_scrolls::log(location.file());
-                }
-
                 core::arch::wasm32::unreachable()
             }
         }

@@ -158,7 +158,11 @@ pub(crate) fn event_get_id_hex(event: &Event) -> &str {
 /// A wrapper around [`super::event_get_pubkey`]. Used by [`Event`].
 #[inline(always)]
 pub(crate) fn event_get_pubkey(event: &Event) -> PublicKey {
-    unsafe { PublicKey(utils::read_slice_owned(super::event_get_id(event.handle))) }
+    unsafe {
+        PublicKey(utils::read_slice_owned(super::event_get_pubkey(
+            event.handle,
+        )))
+    }
 }
 
 /// A wrapper around [`super::event_get_pubkey_hex`]. Used by [`Event`].
@@ -166,7 +170,7 @@ pub(crate) fn event_get_pubkey(event: &Event) -> PublicKey {
 pub(crate) fn event_get_pubkey_hex(event: &Event) -> &str {
     unsafe {
         str::from_utf8_unchecked(utils::read_slice(
-            super::event_get_id_hex(event.handle),
+            super::event_get_pubkey_hex(event.handle),
             HEX_LEN,
         ))
     }

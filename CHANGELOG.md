@@ -36,6 +36,7 @@
 - macros: support `Option` in `from` attr
 - new `PositiveNumber` and `NegativeNumber` types
 - take the ownership in `Filter` functions
+- use the correct ffi function for `event_get_pubkey*`
 
 ## v0.0.1 - 2026/04/10
 

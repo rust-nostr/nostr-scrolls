@@ -2,7 +2,7 @@
 // Distributed under the MIT software license
 
 use crate::{
-    EventId, PublicKey, Subscription,
+    EventId, PublicKey, StaticCell, Subscription,
     host_ffi::{drop as ffi_drop, safe_wrapper},
 };
 
@@ -146,5 +146,134 @@ impl Filter {
     #[inline]
     pub fn subscribe(self) -> Subscription {
         safe_wrapper::subscribe(self)
+    }
+}
+
+/// A filter that can be used as a static variable.
+///
+/// Calling any function after consuming the filter in
+/// [`StaticFilter::subscribe`] function will create a new filter, because the
+/// old one is dropped
+#[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
+pub struct StaticFilter(StaticCell<Option<Filter>>);
+
+impl Default for StaticFilter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl StaticFilter {
+    /// Create a new static filter
+    #[inline]
+    pub const fn new() -> Self {
+        Self(StaticCell::new(None))
+    }
+
+    /// Take the current filter or initialize a new one.
+    #[inline]
+    fn take_filter(&self) -> Filter {
+        unsafe {
+            self.0
+                .borrow_mut()
+                .take()
+                .or_else(|| Some(Filter::new()))
+                .unwrap_unchecked()
+        }
+    }
+
+    /// Replace the current filter with a new one.
+    #[inline]
+    fn set_filter(&self, filter: Filter) {
+        (*self.0.borrow_mut()) = Some(filter)
+    }
+
+    /// A static wrapper around [`Filter::author`]
+    #[inline]
+    pub fn author(&self, pkey: &PublicKey) {
+        self.set_filter(self.take_filter().author(pkey))
+    }
+
+    /// A static wrapper around [`Filter::author_hex`]
+    #[inline]
+    pub fn author_hex(&self, pkey: &str) {
+        self.set_filter(self.take_filter().author_hex(pkey));
+    }
+
+    /// A static wrapper around [`Filter::id`]
+    #[inline]
+    pub fn id(&self, event_id: &EventId) {
+        self.set_filter(self.take_filter().id(event_id));
+    }
+
+    /// A static wrapper around [`Filter::id_hex`]
+    #[inline]
+    pub fn id_hex(&self, event_id: &str) {
+        self.set_filter(self.take_filter().id_hex(event_id));
+    }
+
+    /// A static wrapper around [`Filter::kind`]
+    #[inline]
+    pub fn kind(&self, kind: u16) {
+        self.set_filter(self.take_filter().kind(kind));
+    }
+
+    /// A static wrapper around [`Filter::tag`]
+    #[inline]
+    pub fn tag(&self, tag: char, value: &str) {
+        self.set_filter(self.take_filter().tag(tag, value));
+    }
+
+    /// A static wrapper around [`Filter::tag_bytes`]
+    #[inline]
+    #[doc(alias = "add_tag_bin32")]
+    pub fn tag_bytes(&self, tag: char, bytes: &[u8]) {
+        self.set_filter(self.take_filter().tag_bytes(tag, bytes));
+    }
+
+    /// A static wrapper around [`Filter::limit`]
+    #[inline]
+    pub fn limit(&self, limit: usize) {
+        self.set_filter(self.take_filter().limit(limit));
+    }
+
+    /// A static wrapper around [`Filter::since`]
+    #[inline]
+    pub fn since(&self, since: usize) {
+        self.set_filter(self.take_filter().since(since));
+    }
+
+    /// A static wrapper around [`Filter::until`]
+    #[inline]
+    pub fn until(&self, until: usize) {
+        self.set_filter(self.take_filter().until(until));
+    }
+
+    /// A static wrapper around [`Filter::search`]
+    #[inline]
+    pub fn search(&self, search: &str) {
+        self.set_filter(self.take_filter().search(search));
+    }
+
+    /// A static wrapper around [`Filter::send_to`]
+    #[inline]
+    #[doc(alias = "add_relay")]
+    pub fn send_to(&self, relay: &str) {
+        self.set_filter(self.take_filter().send_to(relay));
+    }
+
+    /// A static wrapper around [`Filter::close_on_eose`]
+    #[inline]
+    pub fn close_on_eose(&self) {
+        self.set_filter(self.take_filter().close_on_eose())
+    }
+
+    /// A static wrapper around [`Filter::subscribe`].
+    ///
+    /// This will consume the filter, any other call to the static filter
+    /// functions will create a new filter
+    #[inline]
+    pub fn subscribe(&self) -> Subscription {
+        self.take_filter().subscribe()
     }
 }

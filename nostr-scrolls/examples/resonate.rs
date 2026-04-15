@@ -26,49 +26,40 @@
 
 extern crate alloc;
 
-use core::cell::UnsafeCell;
-
-use nostr_scrolls::{Event, Filter, UnsafeSync, cb, display};
+use nostr_scrolls::{Event, Filter, PositiveNumber, StaticFilter, cb, display};
 
 const REPOST_KIND: u16 = 6;
 const REACTION_KIND: u16 = 7;
-const SEVEN_DAYS: i32 = 60 * 60 * 24 * 7;
+const SEVEN_DAYS: usize = 60 * 60 * 24 * 7;
 
-static RELATED_FILTER: UnsafeSync<UnsafeCell<Option<Filter>>> = UnsafeSync(UnsafeCell::new(None));
+static RELATED_FILTER: StaticFilter = StaticFilter::new();
 
 /// Build a filter capturing reposts and reactions near a target timestamp.
-fn related_filter(target_ts: usize, time_window: Option<i32>, limit: Option<i32>) -> Filter {
+fn init_releated_filter(target_ts: usize, time_window: Option<usize>, limit: Option<usize>) {
     let time_window = time_window
         .and_then(|days| days.checked_mul(24 * 60 * 60))
-        .unwrap_or(SEVEN_DAYS) as usize;
+        .unwrap_or(SEVEN_DAYS);
 
-    let mut filter = Filter::new()
-        .kind(REPOST_KIND)
-        .kind(REACTION_KIND)
-        .since(target_ts - time_window)
-        .until(target_ts + time_window)
-        .close_on_eose();
+    RELATED_FILTER.kind(REPOST_KIND);
+    RELATED_FILTER.kind(REACTION_KIND);
+    RELATED_FILTER.since(target_ts - time_window);
+    RELATED_FILTER.until(target_ts + time_window);
+    RELATED_FILTER.close_on_eose();
 
     if let Some(limit) = limit {
-        filter = filter.limit(limit as usize);
+        RELATED_FILTER.limit(limit);
     }
-
-    filter
 }
 
 #[nostr_scrolls::main]
-fn run(event: Event, time_window: Option<i32>, limit: Option<i32>) {
+fn run(
+    event: Event,
+    #[from(Option<PositiveNumber>)] time_window: Option<usize>,
+    #[from(Option<PositiveNumber>)] limit: Option<usize>,
+) {
     nostr_scrolls::log("resonate: loading target event");
 
-    if time_window.is_some_and(|days| days <= 0) {
-        panic!("time window must be positive");
-    }
-
-    if limit.is_some_and(|l| l <= 0) {
-        panic!("limit must be positive");
-    }
-
-    unsafe { *RELATED_FILTER.get() = Some(related_filter(event.created_at(), time_window, limit)) };
+    init_releated_filter(event.created_at(), time_window, limit);
 
     // Find likes and reposts for this event
     let like_re_sub = Filter::new()
@@ -80,14 +71,10 @@ fn run(event: Event, time_window: Option<i32>, limit: Option<i32>) {
         .subscribe();
 
     // Add authors of likes/reposts to filter
-    like_re_sub.on_event(cb!(|event| unsafe {
-        let filter = (*RELATED_FILTER.get()).take().unwrap_unchecked();
-        (*RELATED_FILTER.get()) = Some(filter.author(&event.pubkey()));
-    }));
+    like_re_sub.on_event(cb!(|event| RELATED_FILTER.author(&event.pubkey())));
 
     // Subscribe and display events liked by those authors
-    like_re_sub.on_eose(cb!(|| unsafe {
-        let filter = (&mut *RELATED_FILTER.get()).take().unwrap_unchecked();
-        filter.subscribe().on_event(cb!(|e| display(&e)));
-    }));
+    like_re_sub.on_eose(cb!(|| RELATED_FILTER
+        .subscribe()
+        .on_event(cb!(|e| display(&e)))));
 }

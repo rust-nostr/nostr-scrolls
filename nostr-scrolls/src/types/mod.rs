@@ -12,7 +12,7 @@ mod subscription;
 use core::slice;
 
 pub use event::Event;
-pub use filter::Filter;
+pub use filter::*;
 pub use numbers::*;
 pub use static_cell::*;
 pub use subscription::Subscription;

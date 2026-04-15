@@ -26,13 +26,14 @@
 
 extern crate alloc;
 
-use nostr_scrolls::{Event, Filter, PositiveNumber, StaticFilter, cb, display};
+use nostr_scrolls::{Event, Filter, PositiveNumber, StaticCell, StaticFilter, cb, display};
 
 const REPOST_KIND: u16 = 6;
 const REACTION_KIND: u16 = 7;
 const SEVEN_DAYS: usize = 60 * 60 * 24 * 7;
 
 static RELATED_FILTER: StaticFilter = StaticFilter::new();
+static FOUND_AUTHORS: StaticCell<bool> = StaticCell::new(false);
 
 /// Build a filter capturing reposts and reactions near a target timestamp.
 fn init_releated_filter(target_ts: usize, time_window: Option<usize>, limit: Option<usize>) {
@@ -71,10 +72,16 @@ fn run(
         .subscribe();
 
     // Add authors of likes/reposts to filter
-    like_re_sub.on_event(cb!(|event| RELATED_FILTER.author(&event.pubkey())));
+    like_re_sub.on_event(cb!(|event| {
+        *FOUND_AUTHORS.borrow_mut() = true;
+        RELATED_FILTER.author(&event.pubkey())
+    }));
 
     // Subscribe and display events liked by those authors
-    like_re_sub.on_eose(cb!(|| RELATED_FILTER
-        .subscribe()
-        .on_event(cb!(|e| display(&e)))));
+    like_re_sub.on_eose(cb!(|| {
+        if !*FOUND_AUTHORS.borrow() {
+            panic!("No likes or reposts found for the target event");
+        }
+        RELATED_FILTER.subscribe().on_event(cb!(|e| display(&e)))
+    }));
 }

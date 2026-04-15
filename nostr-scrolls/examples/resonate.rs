@@ -73,13 +73,13 @@ fn run(
 
     // Add authors of likes/reposts to filter
     like_re_sub.on_event(cb!(|event| {
-        *FOUND_AUTHORS.borrow_mut() = true;
+        *FOUND_AUTHORS.get_mut() = true;
         RELATED_FILTER.author(&event.pubkey())
     }));
 
     // Subscribe and display events liked by those authors
     like_re_sub.on_eose(cb!(|| {
-        if !*FOUND_AUTHORS.borrow() {
+        if !*FOUND_AUTHORS.get() {
             panic!("No likes or reposts found for the target event");
         }
         RELATED_FILTER.subscribe().on_event(cb!(|e| display(&e)))

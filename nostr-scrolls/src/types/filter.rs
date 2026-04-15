@@ -171,11 +171,11 @@ impl StaticFilter {
     }
 
     /// Take the current filter or initialize a new one.
-    #[inline]
+    #[inline(never)]
     fn take_filter(&self) -> Filter {
         unsafe {
             self.0
-                .borrow_mut()
+                .get_mut()
                 .take()
                 .or_else(|| Some(Filter::new()))
                 .unwrap_unchecked()
@@ -185,7 +185,7 @@ impl StaticFilter {
     /// Replace the current filter with a new one.
     #[inline]
     fn set_filter(&self, filter: Filter) {
-        (*self.0.borrow_mut()) = Some(filter)
+        (*self.0.get_mut()) = Some(filter)
     }
 
     /// A static wrapper around [`Filter::author`]

@@ -33,7 +33,7 @@ impl Subscription {
         utils::remove_on_event_subscription(self.handle);
 
         if crate::SUBSCRIPTIONS_ON_EVENT
-            .borrow_mut()
+            .get_mut()
             .push((self.handle, (self.close_on_eose, handler)))
             .is_err()
         {
@@ -62,7 +62,7 @@ impl Subscription {
         utils::remove_on_eose_subscription(self.handle);
 
         if crate::SUBSCRIPTIONS_ON_EOSE
-            .borrow_mut()
+            .get_mut()
             .push((self.handle, handler))
             .is_err()
         {

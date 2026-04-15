@@ -52,7 +52,7 @@ pub(crate) unsafe fn read_i32(ptr: *const u8, offset: &mut usize) -> i32 {
 /// Locates a subscription handle in the global `on_event` handler list.
 #[inline(never)]
 pub(crate) fn on_event_position(handle: i32) -> Option<usize> {
-    let event_handlers = crate::SUBSCRIPTIONS_ON_EVENT.borrow();
+    let event_handlers = crate::SUBSCRIPTIONS_ON_EVENT.get();
     let length = event_handlers.len();
     let mut i = 0;
 
@@ -70,7 +70,7 @@ pub(crate) fn on_event_position(handle: i32) -> Option<usize> {
 /// Locates a subscription handle in the global `EOSE` handler list.
 #[inline(never)]
 pub(crate) fn on_eose_position(handle: i32) -> Option<usize> {
-    let eose_handlers = crate::SUBSCRIPTIONS_ON_EOSE.borrow();
+    let eose_handlers = crate::SUBSCRIPTIONS_ON_EOSE.get();
     let length = eose_handlers.len();
     let mut i = 0;
 
@@ -94,7 +94,7 @@ pub(crate) fn remove_on_event_subscription(handle: i32) {
 
     unsafe {
         crate::SUBSCRIPTIONS_ON_EVENT
-            .borrow_mut()
+            .get_mut()
             .swap_remove_unchecked(position);
     }
 }
@@ -108,7 +108,7 @@ pub(crate) fn remove_on_eose_subscription(handle: i32) {
 
     unsafe {
         crate::SUBSCRIPTIONS_ON_EOSE
-            .borrow_mut()
+            .get_mut()
             .swap_remove_unchecked(position);
     }
 }
@@ -130,7 +130,7 @@ pub(crate) fn is_close_on_eose(handle: i32) -> bool {
 
     unsafe {
         crate::SUBSCRIPTIONS_ON_EVENT
-            .borrow()
+            .get()
             .get_unchecked(position)
             .1
             .0

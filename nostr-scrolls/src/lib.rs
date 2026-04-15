@@ -64,7 +64,7 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
     };
 
     let close_sub = SUBSCRIPTIONS_ON_EVENT
-        .borrow_mut()
+        .get_mut()
         .get_unchecked_mut(position)
         .1
         .1
@@ -97,7 +97,7 @@ pub unsafe extern "C" fn on_eose(sub_handle: i32) {
         // Execute the user's custom EOSE callback; true indicates subscription
         // should close
         let close_sub = SUBSCRIPTIONS_ON_EOSE
-            .borrow_mut()
+            .get_mut()
             .get_unchecked_mut(position)
             .1
             .call();

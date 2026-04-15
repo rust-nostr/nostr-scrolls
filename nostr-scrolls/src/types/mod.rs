@@ -6,6 +6,7 @@
 mod event;
 mod filter;
 mod numbers;
+mod static_cell;
 mod subscription;
 
 use core::slice;
@@ -13,6 +14,7 @@ use core::slice;
 pub use event::Event;
 pub use filter::Filter;
 pub use numbers::*;
+pub use static_cell::*;
 pub use subscription::Subscription;
 
 use crate::{ReadParam, utils};

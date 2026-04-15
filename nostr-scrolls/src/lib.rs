@@ -20,14 +20,11 @@ mod allocator;
 mod callbacks;
 mod errors;
 mod host_ffi;
-mod simple_cell;
 mod traits;
 mod types;
 mod utils;
 
 extern crate alloc;
-
-use core::ops::Deref;
 
 use heapless::Vec;
 
@@ -38,32 +35,15 @@ pub use self::traits::*;
 pub use self::types::*;
 pub use nostr_scrolls_macros::main;
 
-/// Allows `Sync` for single-threaded WASM targets where sharing is safe by design.
-pub struct UnsafeSync<T>(pub T);
-
-impl<T> Deref for UnsafeSync<T> {
-    type Target = T;
-
-    #[inline(always)]
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-// We manually implement Sync because we know WASM is single-threaded.
-unsafe impl<T> Sync for UnsafeSync<T> {}
-
-type EventStore = UnsafeSync<simple_cell::SimpleCell<Vec<(i32, (bool, EventCallback)), 128>>>;
-type EoseStore = UnsafeSync<simple_cell::SimpleCell<Vec<(i32, EoseCallback), 128>>>;
+type EventStore = StaticCell<Vec<(i32, (bool, EventCallback)), 128>>;
+type EoseStore = StaticCell<Vec<(i32, EoseCallback), 128>>;
 
 /// Maps subscription handles to their event handlers and whether to close on
 /// EOSE.
-pub(crate) static SUBSCRIPTIONS_ON_EVENT: EventStore =
-    UnsafeSync(simple_cell::SimpleCell::new(Vec::new()));
+pub(crate) static SUBSCRIPTIONS_ON_EVENT: EventStore = StaticCell::new(Vec::new());
 
 /// Maps subscription handles to their EOSE handlers
-pub(crate) static SUBSCRIPTIONS_ON_EOSE: EoseStore =
-    UnsafeSync(simple_cell::SimpleCell::new(Vec::new()));
+pub(crate) static SUBSCRIPTIONS_ON_EOSE: EoseStore = StaticCell::new(Vec::new());
 
 // If the WASM module ever calls `nostr.subscribe` it must also export a
 // function named `on_event` that will be called with every received event from
@@ -84,7 +64,7 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
     };
 
     let close_sub = SUBSCRIPTIONS_ON_EVENT
-        .borrow()
+        .borrow_mut()
         .get_unchecked_mut(position)
         .1
         .1
@@ -117,7 +97,7 @@ pub unsafe extern "C" fn on_eose(sub_handle: i32) {
         // Execute the user's custom EOSE callback; true indicates subscription
         // should close
         let close_sub = SUBSCRIPTIONS_ON_EOSE
-            .borrow()
+            .borrow_mut()
             .get_unchecked_mut(position)
             .1
             .call();

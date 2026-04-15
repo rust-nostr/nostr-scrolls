@@ -37,6 +37,7 @@
 - new `PositiveNumber` and `NegativeNumber` types
 - take the ownership in `Filter` functions
 - use the correct ffi function for `event_get_pubkey*`
+- new `StaticCell` type
 
 ## v0.0.1 - 2026/04/10
 

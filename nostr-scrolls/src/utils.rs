@@ -94,7 +94,7 @@ pub(crate) fn remove_on_event_subscription(handle: i32) {
 
     unsafe {
         crate::SUBSCRIPTIONS_ON_EVENT
-            .borrow()
+            .borrow_mut()
             .swap_remove_unchecked(position);
     }
 }
@@ -108,7 +108,7 @@ pub(crate) fn remove_on_eose_subscription(handle: i32) {
 
     unsafe {
         crate::SUBSCRIPTIONS_ON_EOSE
-            .borrow()
+            .borrow_mut()
             .swap_remove_unchecked(position);
     }
 }

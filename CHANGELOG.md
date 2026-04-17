@@ -39,6 +39,7 @@
 - use the correct ffi function for `event_get_pubkey*`
 - new `StaticCell` type
 - new `StaticFilter` type
+- new `ShortEventId` and `ShortPubKey` types
 
 ### Removed
 

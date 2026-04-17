@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::{EoseCallback, EventCallback, host_ffi::drop as ffi_drop, utils};
+use crate::{EoseCallback, EventCallback, host_ffi::drop as ffi_drop, inner_utils};
 
 /// Nostr scrolls subscription
 pub struct Subscription {
@@ -30,7 +30,7 @@ impl Subscription {
     /// [`cb!`]: crate::cb
     /// [`cb_ret!`]: crate::cb_ret
     pub fn on_event(&self, handler: EventCallback) {
-        utils::remove_on_event_subscription(self.handle);
+        inner_utils::remove_on_event_subscription(self.handle);
 
         if crate::SUBSCRIPTIONS_ON_EVENT
             .get_mut()
@@ -59,7 +59,7 @@ impl Subscription {
     /// [`cb!`]: crate::cb
     /// [`cb_ret!`]: crate::cb_ret
     pub fn on_eose(&self, handler: EoseCallback) {
-        utils::remove_on_eose_subscription(self.handle);
+        inner_utils::remove_on_eose_subscription(self.handle);
 
         if crate::SUBSCRIPTIONS_ON_EOSE
             .get_mut()
@@ -79,7 +79,7 @@ impl Subscription {
     /// Cancel the subscription. Terminating event delivery
     #[inline(never)]
     pub fn cancel(self) {
-        utils::remove_subscription(self.handle);
+        inner_utils::remove_subscription(self.handle);
         unsafe { ffi_drop(self.handle) };
     }
 }

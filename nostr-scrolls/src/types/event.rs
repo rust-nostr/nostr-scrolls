@@ -4,7 +4,7 @@
 use crate::{
     EventId, PublicKey, ReadParam,
     host_ffi::{drop as ffi_drop, safe_wrapper},
-    utils,
+    inner_utils,
 };
 
 /// Nostr scrolls event
@@ -15,12 +15,12 @@ pub struct Event {
 
 impl<'a> ReadParam<'a> for Event {
     unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
-        if !utils::read_presence_flag(ptr, offset) {
+        if !inner_utils::read_presence_flag(ptr, offset) {
             panic!("ReadParam(event): Expected required parameter, but host provided 0x00");
         }
 
         Self {
-            handle: utils::read_i32(ptr, offset),
+            handle: inner_utils::read_i32(ptr, offset),
         }
     }
 }

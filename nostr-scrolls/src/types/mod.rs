@@ -17,7 +17,7 @@ pub use numbers::*;
 pub use static_cell::*;
 pub use subscription::Subscription;
 
-use crate::{ReadParam, utils};
+use crate::{ReadParam, inner_utils};
 
 /// Short public key for indexing. First and last 4 bytes
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -31,7 +31,7 @@ pub struct PublicKey(pub(crate) [u8; 32]);
 
 impl<'a> ReadParam<'a> for PublicKey {
     unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
-        if !utils::read_presence_flag(ptr, offset) {
+        if !inner_utils::read_presence_flag(ptr, offset) {
             panic!("ReadParam(public_key): Expected required parameter, but host provided 0x00");
         }
 

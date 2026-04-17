@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Rust Nostr Developers
 // Distributed under the MIT software license
 
-use crate::utils;
+use crate::inner_utils;
 
 /// Trait for reading parameters from the memory. Each parameter type must
 /// implement this trait to be used in `run` function parameters.
@@ -21,7 +21,7 @@ where
     T: ReadParam<'a>,
 {
     unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
-        if !utils::peek_presence_flag(ptr, *offset) {
+        if !inner_utils::peek_presence_flag(ptr, *offset) {
             *offset += 1;
             return None;
         }
@@ -41,11 +41,11 @@ where
 
 impl<'a> ReadParam<'a> for &'a str {
     unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
-        if !utils::read_presence_flag(ptr, offset) {
+        if !inner_utils::read_presence_flag(ptr, offset) {
             panic!("ReadParam(&str): Expected required parameter, but host provided 0x00");
         }
 
-        let str_len = utils::read_u32(ptr, offset) as usize;
+        let str_len = inner_utils::read_u32(ptr, offset) as usize;
         let bytes = core::slice::from_raw_parts(ptr.add(*offset), str_len);
         *offset += str_len;
 
@@ -60,11 +60,11 @@ impl<'a> ReadParam<'a> for &'a str {
 
 impl<'a> ReadParam<'a> for i32 {
     unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
-        if !utils::read_presence_flag(ptr, offset) {
+        if !inner_utils::read_presence_flag(ptr, offset) {
             panic!("ReadParam(i32): Expected required parameter, but host provided 0x00");
         }
 
-        utils::read_i32(ptr, offset)
+        inner_utils::read_i32(ptr, offset)
     }
 }
 
@@ -77,11 +77,11 @@ impl<'a> ReadParam<'a> for isize {
 
 impl<'a> ReadParam<'a> for u32 {
     unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
-        if !utils::read_presence_flag(ptr, offset) {
+        if !inner_utils::read_presence_flag(ptr, offset) {
             panic!("ReadParam(u32): Expected required parameter, but host provided 0x00");
         }
 
-        utils::read_u32(ptr, offset)
+        inner_utils::read_u32(ptr, offset)
     }
 }
 

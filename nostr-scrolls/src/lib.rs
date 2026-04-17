@@ -20,9 +20,9 @@ mod allocator;
 mod callbacks;
 mod errors;
 mod host_ffi;
+mod inner_utils;
 mod traits;
 mod types;
-mod utils;
 
 extern crate alloc;
 
@@ -59,7 +59,7 @@ pub(crate) static SUBSCRIPTIONS_ON_EOSE: EoseStore = StaticCell::new(Vec::new())
 #[unsafe(no_mangle)]
 #[doc(hidden)]
 pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32) {
-    let Some(position) = utils::on_event_position(sub_handle) else {
+    let Some(position) = inner_utils::on_event_position(sub_handle) else {
         return;
     };
 
@@ -76,7 +76,7 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
         );
 
     if close_sub {
-        utils::remove_on_event_subscription(sub_handle);
+        inner_utils::remove_on_event_subscription(sub_handle);
         host_ffi::drop(sub_handle);
     }
 }
@@ -93,7 +93,7 @@ pub unsafe extern "C" fn on_event(sub_handle: i32, event_handle: i32, eosed: i32
 #[doc(hidden)]
 pub unsafe extern "C" fn on_eose(sub_handle: i32) {
     // Try to find a custom EOSE handler for this subscription
-    if let Some(position) = utils::on_eose_position(sub_handle) {
+    if let Some(position) = inner_utils::on_eose_position(sub_handle) {
         // Execute the user's custom EOSE callback; true indicates subscription
         // should close
         let close_sub = SUBSCRIPTIONS_ON_EOSE
@@ -103,7 +103,7 @@ pub unsafe extern "C" fn on_eose(sub_handle: i32) {
             .call();
 
         // Check if this subscription is configured to auto-close on EOSE
-        let is_close_on_eose = utils::is_close_on_eose(sub_handle);
+        let is_close_on_eose = inner_utils::is_close_on_eose(sub_handle);
 
         // Remove subscription from both handler maps if either:
         // - The custom EOSE handler returned true (wants to close), OR
@@ -115,8 +115,8 @@ pub unsafe extern "C" fn on_eose(sub_handle: i32) {
         // No custom EOSE handler exists for this subscription.
         // Check if it's in the event handlers and configured to auto-close on EOSE.
         // If so, remove it from event handlers to prevent further event processing.
-        if utils::is_close_on_eose(sub_handle) {
-            utils::remove_on_event_subscription(sub_handle);
+        if inner_utils::is_close_on_eose(sub_handle) {
+            inner_utils::remove_on_event_subscription(sub_handle);
             host_ffi::drop(sub_handle);
         }
     }

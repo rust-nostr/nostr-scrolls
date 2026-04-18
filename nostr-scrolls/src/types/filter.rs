@@ -86,14 +86,13 @@ impl Filter {
         self
     }
 
-    /// Include events matching a single-letter tag with a fixed-size binary value.
+    /// Include events matching a single-letter tag with a binary value.
     ///
     /// # Panics
-    /// Panics if `tag` is not ASCII alphabetic or `bytes` is not exactly 32 bytes
+    /// Panics if `bytes` is not exactly 32 bytes
     #[inline(always)]
     #[doc(alias = "add_tag_bin32")]
     pub fn tag_bytes(self, tag: char, bytes: &[u8]) -> Self {
-        assert!(tag.is_ascii_alphabetic());
         safe_wrapper::req_add_tag_bin32(&self, tag, bytes);
         self
     }

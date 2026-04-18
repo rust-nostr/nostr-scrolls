@@ -45,6 +45,7 @@
 ### Fixed
 
 - add `move` to the callbacks macros
+- fix `Filter::tag_bytes` expecting a hex string
 
 ### Removed
 

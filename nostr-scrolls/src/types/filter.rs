@@ -155,7 +155,7 @@ impl Filter {
 /// [`StaticFilter::subscribe`] function will create a new filter, because the
 /// old one is dropped
 #[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
-pub struct StaticFilter(StaticCell<Option<Filter>>);
+pub struct StaticFilter(StaticCell<Option<Filter>>, fn(Filter) -> Filter);
 
 impl Default for StaticFilter {
     fn default() -> Self {
@@ -167,7 +167,12 @@ impl StaticFilter {
     /// Create a new static filter
     #[inline]
     pub const fn new() -> Self {
-        Self(StaticCell::new(None))
+        Self(StaticCell::new(None), |f| f)
+    }
+
+    /// Initialize the filter with the given function
+    pub const fn init(f: fn(Filter) -> Filter) -> Self {
+        Self(StaticCell::new(None), f)
     }
 
     /// Take the current filter or initialize a new one.
@@ -177,7 +182,7 @@ impl StaticFilter {
             self.0
                 .get_mut()
                 .take()
-                .or_else(|| Some(Filter::new()))
+                .or_else(|| Some(self.1(Filter::new())))
                 .unwrap_unchecked()
         }
     }

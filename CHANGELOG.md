@@ -40,6 +40,7 @@
 - new `StaticCell` type
 - new `StaticFilter` type
 - new `ShortEventId` and `ShortPubKey` types
+- `StaticFilter::init` to init the filter
 
 ### Removed
 

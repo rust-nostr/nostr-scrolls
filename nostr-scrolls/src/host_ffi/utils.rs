@@ -12,7 +12,7 @@ pub(crate) fn read_slice_owned<const N: usize>(ptr: *const u8) -> [u8; N] {
     }
 
     let mut buffer = [0; N];
-    buffer.copy_from_slice(unsafe { core::slice::from_raw_parts(ptr, 32) });
+    buffer.copy_from_slice(unsafe { core::slice::from_raw_parts(ptr, N) });
     buffer
 }
 

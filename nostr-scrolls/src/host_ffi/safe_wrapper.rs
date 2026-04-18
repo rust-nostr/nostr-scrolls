@@ -243,7 +243,7 @@ pub(crate) fn event_get_tag_item_bin32(
     event: &Event,
     tag_index: usize,
     item_index: usize,
-) -> Option<&[u8]> {
+) -> Option<[u8; 32]> {
     unsafe {
         let ptr =
             super::event_get_tag_item_bin32(event.handle, tag_index as u32, item_index as u32);
@@ -251,7 +251,7 @@ pub(crate) fn event_get_tag_item_bin32(
             return None;
         }
 
-        Some(utils::read_slice(ptr, 32))
+        Some(utils::read_slice_owned(ptr))
     }
 }
 
@@ -291,11 +291,11 @@ pub(crate) fn event_get_tag_item_by_name<'a>(
 ///   - No item in the given index
 ///   - The item is invalid 64-byte hex string
 #[inline(always)]
-pub(crate) fn event_get_tag_item_by_name_bin32<'a>(
-    event: &'a Event,
+pub(crate) fn event_get_tag_item_by_name_bin32(
+    event: &Event,
     name: &str,
     item_index: usize,
-) -> Option<&'a [u8]> {
+) -> Option<[u8; 32]> {
     unsafe {
         let ptr = super::event_get_tag_item_by_name_bin32(
             event.handle,
@@ -308,7 +308,7 @@ pub(crate) fn event_get_tag_item_by_name_bin32<'a>(
             return None;
         }
 
-        Some(utils::read_slice(ptr, 32))
+        Some(utils::read_slice_owned(ptr))
     }
 }
 

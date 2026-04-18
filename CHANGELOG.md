@@ -42,6 +42,10 @@
 - new `ShortEventId` and `ShortPubKey` types
 - `StaticFilter::init` to init the filter
 
+### Changed
+
+- `Event::tag_item_by_name_bytes` and `tag_item_bytes` now returns a 32 bytes
+
 ### Fixed
 
 - add `move` to the callbacks macros

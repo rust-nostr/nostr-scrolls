@@ -102,7 +102,7 @@ impl Event {
     /// not valid hexadecimal or not exactly 64 bytes.
     #[inline(always)]
     #[doc(alias = "get_tag_item_bin32")]
-    pub fn tag_item_bytes(&self, tag_index: usize, item_index: usize) -> Option<&[u8]> {
+    pub fn tag_item_bytes(&self, tag_index: usize, item_index: usize) -> Option<[u8; 32]> {
         safe_wrapper::event_get_tag_item_bin32(self, tag_index, item_index)
     }
 
@@ -122,7 +122,7 @@ impl Event {
     /// Error if `tag_index` exceeds `i32::MAX`.
     #[inline(always)]
     #[doc(alias = "get_tag_item_by_name_bin32")]
-    pub fn tag_item_by_name_bytes(&self, name: &str, item_index: usize) -> Option<&[u8]> {
+    pub fn tag_item_by_name_bytes(&self, name: &str, item_index: usize) -> Option<[u8; 32]> {
         safe_wrapper::event_get_tag_item_by_name_bin32(self, name, item_index)
     }
 }

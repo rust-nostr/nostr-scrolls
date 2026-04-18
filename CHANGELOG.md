@@ -42,6 +42,10 @@
 - new `ShortEventId` and `ShortPubKey` types
 - `StaticFilter::init` to init the filter
 
+### Fixed
+
+- add `move` to the callbacks macros
+
 ### Removed
 
 - macros: filename from panic logs

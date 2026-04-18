@@ -74,13 +74,13 @@ impl EoseCallback {
 #[macro_export]
 macro_rules! cb {
     (|| $body:expr) => {
-        $crate::EoseCallback::NoReturn(::alloc::boxed::Box::new(|| $body))
+        $crate::EoseCallback::NoReturn(::alloc::boxed::Box::new(move || $body))
     };
     (|$a:ident| $body:expr) => {
         $crate::EventCallback::Arg(::alloc::boxed::Box::new(move |$a| $body))
     };
     (|$a:ident, $b:ident| $body:expr) => {
-        $crate::EventCallback::Args(::alloc::boxed::Box::new(|$a, $b| $body))
+        $crate::EventCallback::Args(::alloc::boxed::Box::new(move |$a, $b| $body))
     };
 }
 
@@ -111,12 +111,12 @@ macro_rules! cb {
 #[macro_export]
 macro_rules! cb_ret {
     (|| $body:expr) => {
-        $crate::EoseCallback::Return(::alloc::boxed::Box::new(|| $body))
+        $crate::EoseCallback::Return(::alloc::boxed::Box::new(move || $body))
     };
     (|$a:ident| $body:expr) => {
-        $crate::EventCallback::ArgReturn(::alloc::boxed::Box::new(|$a| $body))
+        $crate::EventCallback::ArgReturn(::alloc::boxed::Box::new(move |$a| $body))
     };
     (|$a:ident, $b:ident| $body:expr) => {
-        $crate::EventCallback::ArgsReturn(::alloc::boxed::Box::new(|$a, $b| $body))
+        $crate::EventCallback::ArgsReturn(::alloc::boxed::Box::new(move |$a, $b| $body))
     };
 }

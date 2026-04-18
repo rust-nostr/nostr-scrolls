@@ -41,6 +41,7 @@
 - new `StaticFilter` type
 - new `ShortEventId` and `ShortPubKey` types
 - `StaticFilter::init` to init the filter
+- impl `From<[u8; 32]>` for `PublicKey` and `EventId`
 
 ### Changed
 

@@ -43,6 +43,12 @@ impl<'a> ReadParam<'a> for PublicKey {
     }
 }
 
+impl From<[u8; 32]> for PublicKey {
+    fn from(value: [u8; 32]) -> Self {
+        Self(value)
+    }
+}
+
 impl PublicKey {
     /// Derives a compact identifier for the public key
     pub fn short(&self) -> ShortPubKey {
@@ -80,5 +86,11 @@ impl EventId {
     /// Check if the event id match the short one
     pub fn matches_short(&self, short: &ShortEventId) -> bool {
         self.0[..4] == short.0[..4] && self.0[28..] == short.0[4..]
+    }
+}
+
+impl From<[u8; 32]> for EventId {
+    fn from(value: [u8; 32]) -> Self {
+        Self(value)
     }
 }

@@ -23,6 +23,7 @@ mod host_ffi;
 mod inner_utils;
 mod traits;
 mod types;
+pub mod utils;
 
 extern crate alloc;
 

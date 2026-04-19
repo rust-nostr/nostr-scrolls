@@ -29,6 +29,18 @@ pub struct ShortPubKey(pub(crate) [u8; 8]);
 #[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
 pub struct PublicKey(pub(crate) [u8; 32]);
 
+impl AsRef<[u8; 32]> for PublicKey {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
+impl From<[u8; 32]> for PublicKey {
+    fn from(value: [u8; 32]) -> Self {
+        Self(value)
+    }
+}
+
 impl<'a> ReadParam<'a> for PublicKey {
     unsafe fn read_param(ptr: *const u8, offset: &mut usize) -> Self {
         if !inner_utils::read_presence_flag(ptr, offset) {
@@ -40,12 +52,6 @@ impl<'a> ReadParam<'a> for PublicKey {
 
         *offset += 32;
         PublicKey(buf)
-    }
-}
-
-impl From<[u8; 32]> for PublicKey {
-    fn from(value: [u8; 32]) -> Self {
-        Self(value)
     }
 }
 
@@ -74,6 +80,18 @@ pub struct ShortEventId(pub(crate) [u8; 8]);
 #[cfg_attr(feature = "debug-strings", derive(core::fmt::Debug))]
 pub struct EventId(pub(crate) [u8; 32]);
 
+impl AsRef<[u8; 32]> for EventId {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
+impl From<[u8; 32]> for EventId {
+    fn from(value: [u8; 32]) -> Self {
+        Self(value)
+    }
+}
+
 impl EventId {
     /// Derives a compact identifier for the event id
     pub fn short(&self) -> ShortEventId {
@@ -86,11 +104,5 @@ impl EventId {
     /// Check if the event id match the short one
     pub fn matches_short(&self, short: &ShortEventId) -> bool {
         self.0[..4] == short.0[..4] && self.0[28..] == short.0[4..]
-    }
-}
-
-impl From<[u8; 32]> for EventId {
-    fn from(value: [u8; 32]) -> Self {
-        Self(value)
     }
 }

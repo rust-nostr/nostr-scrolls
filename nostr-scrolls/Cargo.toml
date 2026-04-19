@@ -33,3 +33,6 @@ name = "attr_from"
 
 [[example]]
 name = "positive_number"
+
+[[example]]
+name = "echoes"

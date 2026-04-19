@@ -51,7 +51,11 @@ pub fn read_relays(event: &Event, limit: usize) -> Vec<Relay<'_>> {
     let mut relays = Vec::with_capacity(limit);
     unsafe {
         for tag_idx in 0..(event.tag_count().min(limit)) {
-            if event.tag_items_count(tag_idx).unwrap_unchecked() < 2 {
+            // Skip tags that are too short to contain a relay URL or aren't the
+            // expected "r" (relay) tag type
+            if event.tag_items_count(tag_idx).unwrap_unchecked() < 2
+                || event.tag_item(tag_idx, 0).unwrap_unchecked() != "r"
+            {
                 continue;
             }
 
